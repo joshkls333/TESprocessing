@@ -56,7 +56,7 @@ if not os.path.exists(newpath_threatened):
 
 # layerType = sys.argv[4]
 
-layerType = "Critical_Habitat_Polygons"
+layerType = "CNDDB"
 
 layerWorkSpace = in_workspace + "\\" + layerType + "\\"
 projectedGDB = layerType + "_Test_2017_CAALB83_newproj.gdb"
@@ -81,27 +81,11 @@ elif layerType == "Wildlife_Sites":
 elif layerType == "Wildlife_Observations":
     intable = in_workspace + "\\Wildlife\\EDW_FishWildlife_R05_021617_Everything.gdb\\Fish_and_Wildlife\\FishWildlife_Observation"
 elif layerType == "Critical_Habitat_Polygons":
-    # intable = in_workspace + "\\CHab\\2017_CHab_CAALB83.gdb\\CHabPolyAllSelectedSpecies2017_nobuf"
     intable = in_workspace + "\\CHab\\crithab_all_layers\\CRITHAB_POLY.shp"
-
-    # chabWorkSpace = in_workspace + "\\Chab\\crithab_all_layers\\"
-    # if arcpy.Exists("Test_Chab_newproj.gdb"):
-    #     newspace = chabWorkSpace + "\\Test_Chab_newproj.gdb\\crit_poly_proj"
-    # else:
-    #     arcpy.CreateFileGDB_management(chabWorkSpace, "Test_Chab_newproj.gdb")
-    #     newspace = chabWorkSpace + "\\Test_Chab_newproj.gdb\\crit_poly_proj"
 elif layerType == "Critical_Habitat_Lines":
     intable = in_workspace + "\\CHab\\2017_CHab_CAALB83.gdb\\CHabLineAllSelectedSpecies2017"
 elif layerType == "CNDDB":
     intable = in_workspace + "\\CNDDB\\gis_gov\\cnddb.shp"
-
-    # cnddbWorkSpace = in_workspace + "\\CNDDB\\"
-    # if arcpy.Exists(cnddbWorkSpace + "Test_CNDDB_newproj.gdb"):
-    #     newspace = cnddbWorkSpace + "\\Test_CNDDB_newproj.gdb\\CNDDB_2017_All_selects"
-    # else:
-    #     arcpy.CreateFileGDB_management(cnddbWorkSpace, "Test_CNDDB_newproj.gdb")
-    #     newspace = cnddbWorkSpace + "\\Test_CNDDB_newproj.gdb\\CNDDB_2017_All_selects"
-
 
 #------------------------------------------------------------------------------
 # Testing to see if data is projected in NAD 1983 California Teale Albers
@@ -120,7 +104,7 @@ else:
 # else:
 #     outtable = intable + "_new"
 
-outtable = newProjWorkSpace + "_newE"
+outtable = newProjWorkSpace + "_new"
 
 arcpy.AddMessage("Table: " + intable)
 
@@ -180,7 +164,7 @@ for item in selectionList:
     arcpy.AddMessage(item)
 
 if layerType == "TESP":
-    sciNameField= "SCIENTIFIC_NAME"
+    sciNameField = "SCIENTIFIC_NAME"
     commonNameField = "ACCEPTED_COMMON_NAME"
     sourceField = "EDW TESp OccurrencesALL_FoundPlant pulled 2/2017"
 elif layerType == "Wildlife_Sites":
@@ -297,12 +281,6 @@ try:
 
             cur.updateRow(row)
 
-            # May delete this if below code captures it:
-
-            # arcpy.AddMessage("Number of Threatened = " + str(threatNum))
-            # arcpy.AddMessage("Number of Sensitive = " + str(sensitiveNum))
-            # arcpy.AddMessage("Number of Endangered = " + str(endangerNum))
-
         del cur
 
     elif layerType == "CNDDB":
@@ -349,14 +327,20 @@ try:
 
             row.BUFFT_FIRE = bufferAmount
             row.BUFFM_FIRE = bufferAmount * 0.3048
+            if row.GRANK_FIRE == "Threatened":
+                threatNum += 1
+            elif row.GRANK_FIRE == "Sensitive":
+                sensitiveNum += 1
+            elif row.GRANK_FIRE == "Endangered":
+                endangerNum += 1
+            else:
+                otherNum += 1
 
             cur.updateRow(row)
 
         del cur
 
     else:
-
-        # Need to clean up this code below pull from list instead of csv
 
         forestField = "FS_UNIT_NAME"
         cur = arcpy.UpdateCursor(outtable)
@@ -398,48 +382,7 @@ try:
             else:
                 otherNum += 1
 
-
-
-            # Need to clean up this code below pull from list instead of csv
-
-            # with open(csvFile, 'rb') as f:
-            #     reader = csv.reader(f)
-            #     for line in reader:
-            #
-            #         species = line[0]
-            #         status = line[1]
-            #         bufferAmt = line[2]
-            #         forest = line[3]
-            #
-            #         if species.startswith(speciesrow) and forest == "":
-            #
-            #             if bufferAmt == "NN" or "":
-            #                     bufferAmount = 0
-            #             else:
-            #                     bufferAmount = int(bufferAmt)
-            #             break
-            #         elif species.startswith(speciesrow) and forest == forestrow:
-            #
-            #             if bufferAmt == "NN" or "":
-            #                     buffer_amount = 0
-            #             else:
-            #                     buffer_amount = int(bufferAmt)
-            #            break
-
-
-
-            # if row.getValue(field) in threatenedList :
-            #     row.GRANK_FIRE = "Threatened"
-            #     threatNum += 1
-            # elif row.getValue(field) in sensitiveList:
-            #     row.GRANK_FIRE = "Sensitive"
-            #     sensitiveNum += 1
-            # else:
-            #     row.GRANK_FIRE = "Endangered"
-            #     endangerNum += 1
-
             cur.updateRow(row)
-
 
         del cur
 
@@ -547,7 +490,7 @@ try:
     arcpy.AddMessage("Repairing Geometry ......")
     arcpy.RepairGeometry_management(outFeatureClass)
 
-    if layerType != "Critcal_Habitat_Polygons":
+    if layerType != "Critical_Habitat_Polygons":
         arcpy.AddMessage("Buffering features ....")
         buffer_fc = outFeatureClass + "_buffer"
         buffer_field = "BUFFM_FIRE"
@@ -592,121 +535,23 @@ try:
         arcpy.AddMessage("Copying selected records to Sensitive Feature Class ......")
         arcpy.CopyFeatures_management("lyr", finalWorkSpace)
 
+    arcpy.AddMessage("Script complete ... check data and make changes ... then proceed to intersection")
 
+    # -----------------------------------------------------------------------------------
+    #  Note this process will be run in another script within an
+    #  ArcGIS Pro environment using PairwiseIntersect_analysis
+    # -----------------------------------------------------------------------------------
+    # arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
+    # arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
 
-        # usfsOwnershipFeatureClass = r"C:\Users\jklaus\Documents\Python_Testing\fire_retardant\USFS_Ownership_LSRS\2017_USFS_Ownership_CAALB83.gdb\USFS_OwnershipLSRS_2017"
+    # usfsOwnershipFeatureClass = r"C:\Users\jklaus\Documents\Python_Testing\fire_retardant\USFS_Ownership_LSRS\2017_USFS_Ownership_CAALB83.gdb\USFS_OwnershipLSRS_2017"
     #
     # intersectFeatureClass = outFeatClass + "_intersect"
     #
     # arcpy.AddMessage("Intersecting with USFS Ownership feature class .....")
     # arcpy.AddMessage("Please be patient while this runs .....")
 
-#-----------------------------------------------------------------------------------
-
-    # Note this process will be run in another script within an ArcGIS Pro environment using PairwiseIntersect_analysis
-    # arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
-    # arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
-
 except arcpy.ExecuteError:
     arcpy.GetMessages()
 except Exception as e:
     arcpy.AddMessage(e)
-
-
-    # ____________________________________________________________________
-    #
-    # REMOVED THE BELOW HARDCODED QUERIES AND THREATENED/SENSITIVE LISTS
-    #
-    #_____________________________________________________________________
-
-
-    # The following query tl and sl based on TESP
-    #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-    # selectQuery = """ SCIENTIFIC_NAME = 'Acanthomintha ilicifolia' OR SCIENTIFIC_NAME = 'Acanthoscyphus parishii var. goodmaniana'
-    #                   OR SCIENTIFIC_NAME = 'Allium munzii' OR SCIENTIFIC_NAME = 'Allium tribracteatum' OR SCIENTIFIC_NAME = 'Arabis johnstonii'
-    #                   OR SCIENTIFIC_NAME = 'Arabis macdonaldiana' OR SCIENTIFIC_NAME = 'Arenaria ursina' OR SCIENTIFIC_NAME = 'Astragalus albens'
-    #                   OR SCIENTIFIC_NAME = 'Astragalus brauntonii' OR SCIENTIFIC_NAME = 'Astragalus ertterae' OR SCIENTIFIC_NAME = 'Astragalus pachypus var. jaegeri'
-    #                   OR SCIENTIFIC_NAME = 'Astragalus shevockii' OR SCIENTIFIC_NAME = 'Astragalus tricarinatus' OR SCIENTIFIC_NAME = 'Baccharis vanessae'
-    #                   OR SCIENTIFIC_NAME = 'Berberis nevinii' OR SCIENTIFIC_NAME = 'Brodiaea filifolia' OR SCIENTIFIC_NAME = 'Castilleja cinerea'
-    #                   OR SCIENTIFIC_NAME = 'Castilleja plagiotoma' OR SCIENTIFIC_NAME = 'Caulanthus californicus' OR SCIENTIFIC_NAME = 'Ceanothus ophiochilus'
-    #                   OR SCIENTIFIC_NAME = 'Chorizanthe parryi var. parryi' OR SCIENTIFIC_NAME = 'Chorizanthe polygonoides ssp. longispina'
-    #                   OR SCIENTIFIC_NAME = 'Clarkia springvillensis' OR SCIENTIFIC_NAME = 'Delphinium hesperium ssp. cuyamacae'
-    #                   OR SCIENTIFIC_NAME = 'Dicentra nevadensis' OR SCIENTIFIC_NAME = 'Dodecahema leptoceras' OR SCIENTIFIC_NAME = 'Erigeron parishii'
-    #                   OR SCIENTIFIC_NAME = 'Eriogonum breedlovei var. breedlovei' OR SCIENTIFIC_NAME = 'Eriogonum kennedyi var. austromontanum'
-    #                   OR SCIENTIFIC_NAME = 'Eriogonum ovalifolium var. vineum' OR SCIENTIFIC_NAME = 'Eriogonum spectabile' OR SCIENTIFIC_NAME = 'Horkelia tularensis'
-    #                   OR SCIENTIFIC_NAME = 'Imperata brevifolia' OR SCIENTIFIC_NAME = 'Leptosiphon floribundum ssp. hallii' OR SCIENTIFIC_NAME = 'Lupinus constancei'
-    #                   OR SCIENTIFIC_NAME = 'Monardella macrantha ssp. hallii' OR SCIENTIFIC_NAME = 'Monardella viridis ssp. saxicola'
-    #                   OR SCIENTIFIC_NAME = 'Nemacladus twisselmannii' OR SCIENTIFIC_NAME = 'Orcuttia tenuis' OR SCIENTIFIC_NAME = 'Oreonana vestita'
-    #                   OR SCIENTIFIC_NAME = 'Penstemon californicus' OR SCIENTIFIC_NAME = 'Phlox hirsuta' OR SCIENTIFIC_NAME = 'Physaria kingii ssp. bernardina'
-    #                   OR SCIENTIFIC_NAME = 'Lesquerella kingii ssp. bernardina' OR SCIENTIFIC_NAME = 'Poa atropurpurea' OR SCIENTIFIC_NAME = 'Pseudobahia peirsonii'
-    #                   OR SCIENTIFIC_NAME = 'Packera layneae' OR SCIENTIFIC_NAME = 'Sidalcea hickmanii ssp. parishii' OR SCIENTIFIC_NAME = 'Sidalcea keckii'
-    #                   OR SCIENTIFIC_NAME = 'Sidalcea pedata' OR SCIENTIFIC_NAME = 'Streptanthus cordatus var. piutensis' OR SCIENTIFIC_NAME = 'Streptanthus fenestratus'
-    #                   OR SCIENTIFIC_NAME = 'Taraxacum californicum' OR SCIENTIFIC_NAME = 'Thelypodium stenopetalum' OR SCIENTIFIC_NAME = 'Thelypteris puberula var. sonorensis'
-    #                   OR SCIENTIFIC_NAME = 'Trifolium dedeckerae' OR SCIENTIFIC_NAME = 'Tuctoria greenei' OR SCIENTIFIC_NAME = 'Howellia aquatilis'
-    #                   OR SCIENTIFIC_NAME = 'Heterotheca shevockii' OR SCIENTIFIC_NAME = 'Marina orcuttii var. orcuttii'
-    #                   OR ACCEPTED_SCIENTIFIC_NAME = 'Mahonia nevinii' OR ACCEPTED_SCIENTIFIC_NAME = 'Stanfordia californica' OR ACCEPTED_SCIENTIFIC_NAME = 'Clarkia springvillensis'
-    #                   OR ACCEPTED_SCIENTIFIC_NAME = 'Abronia alpina' OR ACCEPTED_SCIENTIFIC_NAME = 'Calochortus persistens' """
-    #
-    #
-    #
-    # tl = """Acanthomintha ilicifolia,Arenaria ursina,Astragalus tricarinatus,
-    #         Baccharis vanessae,Brodiaea filifolia,
-    #         Castilleja cinerea,Ceanothus ophiochilus,Eriogonum kennedyi var. austromontanum,
-    #         Orcuttia tenuis,Pseudobahia peirsonii,Howellia aquatilis"""
-    #
-    #
-    # sl = """Allium tribracteatum,Arabis johnstonii,Astragalus ertterae,Astragalus pachypus var. jaegeri,Astragalus shevockii,Castilleja plagiotoma,
-    #         Chorizanthe parryi var. parryi,Chorizanthe polygonoides ssp. longispina,Delphinium hesperium ssp. cuyamacae,Dicentra nevadensis,
-    #         riogonum breedlovei var. breedlovei,Eriogonum spectabile,Lupinus constancei,Monardella macrantha ssp. hallii,
-    #         Monardella viridis ssp. saxicola,Nemacladus twisselmannii,Oreonana vestita,Penstemon californicus,Streptanthus cordatus var. piutensis,
-    #         Streptanthus fenestratus,Thelypteris puberula var. sonorensis,Trifolium dedeckerae,Sidalcea hickmanii ssp. parishii,Heterotheca shevockii,
-    #         Horkelia tularensis, Marina orcuttii var. orcuttii"""
-
-    #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-    # The following query tl and sl based on Wildlife Sites
-    #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    #
-    # selectQuery = """
-    #                 SCI_NAME = 'Bufo canorus' OR SCI_NAME = 'Bufo californicus' OR SCI_NAME = 'Dipodomys stephensi'
-    #              OR SCI_NAME = 'Empidonax traillii extimus' OR SCI_NAME = 'Euphydryas editha quino' OR SCI_NAME = 'Lycaena hermes'
-    #              OR SCI_NAME = 'Pyrgus ruralis lagunae' OR SCI_NAME = 'Rana aurora draytonii' OR SCI_NAME = 'Rana draytonii'
-    #              OR SCI_NAME = 'Rana muscosa' OR SCI_NAME = 'Rana sierrae' OR SCI_NAME = 'Vireo bellii pusillus' OR SCI_NAME = 'Polioptila californica'
-    #              OR SCI_NAME = 'Anaxyrus californicus' OR SCI_NAME = 'Bufo microscaphus californicus'
-    #             """
-    #
-    #
-    #
-    # tl = "Bufo canorus,Rana aurora draytonii,Rana draytonii"
-    #
-    #
-    # sl = "Lycaena hermes"
-
-    #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-    # The following query tl and sl based on Wildlife Observations
-    # #----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-    #
-    # selectQuery = """
-    #                 SCIENTIFIC_NAME = 'Bufo californicus' OR SCIENTIFIC_NAME = 'Anaxyrus californicus' OR SCIENTIFIC_NAME = 'Gambelia sila'
-    #             OR SCIENTIFIC_NAME = 'Gymnogyps californianus' OR SCIENTIFIC_NAME = 'Polioptila californica californica'
-    #             OR SCIENTIFIC_NAME = 'Rana draytonii' OR SCIENTIFIC_NAME = 'Rana aurora draytonii' OR SCIENTIFIC_NAME = 'Ambystoma californiense'
-    #             OR SCIENTIFIC_NAME = 'Acipenser medirostris' OR SCIENTIFIC_NAME = 'Lycaena hermes' OR SCIENTIFIC_NAME = 'Pyrgus ruralis lagunae'
-    #             OR SCIENTIFIC_NAME = 'Oncorhynchus clarkii henshawi' OR SCIENTIFIC_NAME = 'Vireo bellii pusillus' OR SCIENTIFIC_NAME = 'Rana muscosa'
-    #             OR SCIENTIFIC_NAME = 'Thaleichthys pacificus' OR SCIENTIFIC_NAME = 'Oncorhynchus clarkii seleniris' OR SCIENTIFIC_NAME = 'Euphydryas editha quino'
-    #             OR SCIENTIFIC_NAME = 'Dipodomys merriami parvus' OR SCIENTIFIC_NAME = 'Catostomus santaanae' OR SCIENTIFIC_NAME = 'Pacifastacus fortis'
-    #             OR SCIENTIFIC_NAME = 'Rana sierrae' OR SCIENTIFIC_NAME = 'Oncorhynchus kisutch' OR SCIENTIFIC_NAME = 'Empidonax traillii extimus'
-    #             OR SCIENTIFIC_NAME = 'Dipodomys stephensi' OR SCIENTIFIC_NAME = 'Branchinecta lynchi' OR SCIENTIFIC_NAME = 'Lepidurus packardi'
-    #             OR SCIENTIFIC_NAME = 'Coccyzus americanus occidentalis' OR SCIENTIFIC_NAME = 'Bufo canorus' OR SCIENTIFIC_NAME = 'Anaxyrus canorus'
-    #             OR SCIENTIFIC_NAME = 'Polioptila californica' OR SCIENTIFIC_NAME = 'Gasterosteus aculeatus williamsoni'
-    #             """
-    #
-    #             #  Please note:  Need to do special selection for COMMON_NAME = "Foothill Yellow-legged Frog" or "Mountain Yellow-legged Frog"
-    #
-    # tl = "Acipenser medirostris,Ambystoma californiense,Anaxyrus canorus,Branchinecta lynchi,Bufo canorus,Oncorhynchus clarkii henshawi,Oncorhynchus clarkii seleniris,Oncorhynchus kisutch"
-    #
-    #
-    # sl = "Lycaena hermes"
-
-    #----------------------------------------------------------------------------------------------------------------------------------------------------------------------

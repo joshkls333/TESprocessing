@@ -21,9 +21,11 @@ arcpy.env.overwriteOutput = True
 
 # intable = r"C:\Users\jklaus\Documents\Python_Testing\fire_retardant\2017_EDW_CAALB83.gdb\EDW_TESP_2017_OccurrenceAll_FoundPlants_newH_"
 
-# layerType = "TESP"
+# layerType = "Critical_Habitat_Polygons"
 
 layerType = sys.argv[2]
+
+# outFeatClass = in_workspace + "\\" + layerType + "\\Critical_Habitat_Polygons_Test_2017_CAALB83_newproj.gdb\Critical_Habitat_Polygons_2017_Occurrence_found_newE_singlepart"
 
 # outFeatClass = in_workspace + "\\" + layerType + "\\TESP_Test_2017_CAALB83_newproj.gdb\\TESP_2017_Occurrence_found_newE_singlepart_buffer_spart"
 
@@ -65,7 +67,7 @@ else:
     arcpy.CreateFileGDB_management(newpath_threatened, fra_threatened_gdb)
 
 try:
-    usfsOwnershipFeatureClass = r"C:\Users\jklaus\Documents\Python_Testing\fire_retardant\USFS_Ownership_LSRS\2017_USFS_Ownership_CAALB83.gdb\USFS_OwnershipLSRS_2017"
+    usfsOwnershipFeatureClass = in_workspace + "\\USFS_Ownership_LSRS\\2017_USFS_Ownership_CAALB83.gdb\\USFS_OwnershipLSRS_2017"
 
     intersectFeatureClass = outFeatClass + "_intersect"
 
@@ -154,14 +156,16 @@ try:
 
     cur = arcpy.UpdateCursor(intersectFeatureClass)
 
-    field = "FS_UNIT_ID"
+    field = "UnitID_FS"
 
     # populating UnitID field with UnitID_FS field
     for row in cur:
-        row.UnitID = row.getValue(field)
+        row.UnitID = "0" + str(row.getValue(field))
         cur.updateRow(row)
 
     del cur
+
+    arcpy.AddMessage("testing ....")
 
     # Set local variables
     # inFeatures = intersectFeatureClass
@@ -196,16 +200,24 @@ try:
 
     arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
                               ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
-                               "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE", "BUFF_DIST"])
+                               "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"])
+
+    # May delete this once I confirm we don't need BUFF_DIST from Stacey
+    # arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
+    #                                 ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
+    #                                  "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE", "BUFF_DIST"])
 
     arcpy.AddMessage("Repairing Geometry ......")
     arcpy.RepairGeometry_management(intersectFeatureClass)
 
     # --------------Copying to Sensitive Geodatabase for interim deliverable step
+
     arcpy.MakeFeatureLayer_management(dissolveFeatureClass, "tmplyr")
 
     arcpy.AddMessage("Selecting records based on Sensitive rank ....")
     arcpy.SelectLayerByAttribute_management("tmplyr", "NEW_SELECTION", "GRANK_FIRE = 'Sensitive'")
+    finalLocation = ""
+    arcpy.AddMessage("testing...." + finalLocation)
 
     if layerType == "TESP":
         finalLocation = newpath_sensitive + "\\\\" + sensitive_gdb + "\\\\EDW_TESP_2017_Sensitive_OccurrenceAll_FoundPlants_nobuf"
@@ -214,7 +226,7 @@ try:
     elif layerType == "Wildlife_Observations":
         finalLocation = newpath_sensitive + "\\\\" + sensitive_gdb + "\\\\EDW_FishWildlife_Observation_2017_Sensitive_nobuf"
     elif layerType == "Critical_Habitat_Polygons":
-        outlocation = newpath_sensitive + "\\\\" + sensitive_gdb + "\\\\CHabPolyAllSelectedSpecies_2017_Sensitive_nobuf"
+        finalLocation = newpath_sensitive + "\\\\" + sensitive_gdb + "\\\\CHabPolyAllSelectedSpecies_2017_Sensitive_nobuf"
     elif layerType == "CNDDB":
         finalLocation = newpath_sensitive + "\\\\" + sensitive_gdb + "\\\\CNDDB_selects_2017_Sensitive_nobuf"
 
@@ -273,7 +285,6 @@ try:
     result = arcpy.GetCount_management(finalLocation)
     count = int(result.getOutput(0))
     arcpy.AddMessage("Total Number of Endangered Records: " + str(count))
-
 
 except arcpy.ExecuteError:
     arcpy.GetMessages()
