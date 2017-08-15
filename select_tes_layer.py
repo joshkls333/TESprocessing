@@ -2,7 +2,7 @@
 #
 # Usage: select_fields
 # Description: Selects only those records with Scientific Names equal to TES list
-# Created by: Josh Klaus 07/27/2017
+# Created by: Josh Klaus 07/27/2017 jklaus@fs.fed.us
 # ---------------------------------------------------------------------------
 
 # Import arcpy module
@@ -17,16 +17,6 @@ in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
 
 arcpy.env.workspace = in_workspace
 arcpy.env.overwriteOutput = True
-
-# selectQuery = sys.argv[3]
-
-# selection = sys.argv[3].split(',')
-
-# threatenedList = tl.split(',')
-# sensitiveList = sl.split(',')
-
-# threatenedList = sys.argv[4].split(',')
-# sensitiveList = sys.argv[5].split(',')
 
 # -------------------------------------------------------------------------------
 # the following section will create folders and geodatabases to store Deliverables
@@ -58,9 +48,10 @@ if not os.path.exists(newpath_threatened):
     arcpy.AddMessage("Creating Geodatabase for Threatened Data Deliverables ....")
     arcpy.CreateFileGDB_management(newpath_threatened, threatened_gdb)
 
-#--------------------------------------------------------------------------------
+# --------------------------------------------------------------------------------
+#  Please note the following selections of intable and csv are file dependent
+# --------------------------------------------------------------------------------
 
-#----------Please note the following selections of intable and csv are file dependent----------------------
 # intable = sys.argv[2]
 
 # layerType = sys.argv[4]
@@ -216,7 +207,7 @@ selectQuery =  "(" + sciNameField + " = "
 selectionListLength = len(selectionList)
 
 for n in range(1, selectionListLength-1):
-    selectQuery += "'" + selectionList[n][0] + "' OR " + sciNameField  + " = "
+    selectQuery += "'" + selectionList[n][0] + "' OR " + sciNameField + " = "
 
 selectQuery += "'" + selectionList[selectionListLength-1][0] + "')"
 
@@ -226,10 +217,12 @@ if layerType == "CNDDB":
                    AND (ACCURACY = '1/10 mile' OR ACCURACY = '1/5 mile' 
                      OR ACCURACY = '80 meters' OR ACCURACY = 'specific area')
                    """
+
 elif layerType == "Wildlife_Sites":
     selectQuery += " AND (ASSOC_OBS > 0) AND (SITE_NAME NOT LIKE '%Study%') "
 
-
+elif layerType == "Wildlife_Observations":
+    selectQuery += " AND (TOTAL_DETECTED != 0)"
 
 # Need to test the below for TESP layer with added searches for ACCEPTED_SCIENTIFIC_NAME
 # __________________________________________________________________________________________________
