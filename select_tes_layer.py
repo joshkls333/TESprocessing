@@ -404,16 +404,17 @@ try:
     arcpy.AddMessage("Selecting records based on Sensitive rank ....")
     arcpy.SelectLayerByAttribute_management ("lyr", "NEW_SELECTION", "GRANK_FIRE = 'Sensitive'" )
 
+    outlocation = newpath_sensitive + "\\" + sensitive_gdb + "\\"
     if layerType == "TESP":
-        outlocation = newpath_sensitive + "\\\\" + sensitive_gdb + "\\\\EDW_TESP_2017_Sensitive_OccurrenceAll_FoundPlants_nobuf"
+        outlocation += "EDW_TESP_2017_Sensitive_OccurrenceAll_FoundPlants_nobuf"
     elif layerType == "Wildlife_Sites":
-        outlocation = newpath_sensitive + "\\\\" + sensitive_gdb + "\\\\EDW_WildlifeSites_2017_Sensitive_nobuf"
+        outlocation += "EDW_WildlifeSites_2017_Sensitive_nobuf"
     elif layerType == "Wildlife_Observations":
-        outlocation = newpath_sensitive + "\\\\" + sensitive_gdb + "\\\\EDW_FishWildlife_Observation_2017_Sensitive_nobuf"
+        outlocation += "EDW_FishWildlife_Observation_2017_Sensitive_nobuf"
     elif layerType == "Critical_Habitat_Polygons":
-        outlocation = newpath_sensitive + "\\\\" + sensitive_gdb + "\\\\CHabPolyAllSelectedSpecies_2017_Sensitive_nobuf"
+        outlocation += "CHabPolyAllSelectedSpecies_2017_Sensitive_nobuf"
     elif layerType == "CNDDB":
-        outlocation = newpath_sensitive + "\\\\" + sensitive_gdb + "\\\\CNDDB_selects_2017_Sensitive_nobuf"
+        outlocation += "CNDDB_selects_2017_Sensitive_nobuf"
 
     arcpy.AddMessage("Copying selected records to Sensitive Geodatabase ......")
     arcpy.CopyFeatures_management("lyr", outlocation)
@@ -429,16 +430,18 @@ try:
     arcpy.AddMessage("Selecting records based on Threatened rank ....")
     arcpy.SelectLayerByAttribute_management ("lyr", "NEW_SELECTION", "GRANK_FIRE = 'Threatened'" )
 
+    outlocation = newpath_threatened + "\\" + threatened_gdb + "\\"
+
     if layerType == "TESP":
-        outlocation = newpath_threatened + "\\\\" + threatened_gdb + "\\\\EDW_TESP_2017_Threatened_OccurrenceAll_FoundPlants_nobuf"
+        outlocation += "EDW_TESP_2017_Threatened_OccurrenceAll_FoundPlants_nobuf"
     elif layerType == "Wildlife_Sites":
-        outlocation = newpath_threatened + "\\\\" + threatened_gdb + "\\\\EDW_WildlifeSites_2017_Threatened_nobuf"
+        outlocation += "EDW_WildlifeSites_2017_Threatened_nobuf"
     elif layerType == "Wildlife_Observations":
-        outlocation = newpath_threatened + "\\\\" + threatened_gdb + "\\\\EDW_FishWildlife_Observation_2017_Threatened_nobuf"
+        outlocation += "EDW_FishWildlife_Observation_2017_Threatened_nobuf"
     elif layerType == "Critical_Habitat_Polygons":
-        outlocation = newpath_threatened + "\\\\" + threatened_gdb + "\\\\CHabPolyAllSelectedSpecies_2017_Threatened_nobuf"
+        outlocation += "CHabPolyAllSelectedSpecies_2017_Threatened_nobuf"
     elif layerType == "CNDDB":
-        outlocation = newpath_threatened + "\\\\" + threatened_gdb + "\\\\CNDDB_selects_2017_Threatened_nobuf"
+        outlocation += "CNDDB_selects_2017_Threatened_nobuf"
 
     arcpy.AddMessage("Copying selected records to Threatened Geodatabase ......")
     arcpy.CopyFeatures_management("lyr", outlocation)
@@ -453,16 +456,18 @@ try:
     arcpy.AddMessage("Selecting records based on Endangered rank ....")
     arcpy.SelectLayerByAttribute_management ("lyr", "NEW_SELECTION", "GRANK_FIRE = 'Endangered'" )
 
+    outlocation = newpath_endangered + "\\" + endangered_gdb + "\\"
+
     if layerType == "TESP":
-        outlocation = newpath_endangered + "\\\\" + endangered_gdb + "\\\\EDW_TESP_2017_Endangered_OccurrenceAll_FoundPlants_nobuf"
+        outlocation += "EDW_TESP_2017_Endangered_OccurrenceAll_FoundPlants_nobuf"
     elif layerType == "Wildlife_Sites":
-        outlocation = newpath_endangered + "\\\\" + endangered_gdb + "\\\\EDW_WildlifeSites_2017_Endangered_nobuf"
+        outlocation += "EDW_WildlifeSites_2017_Endangered_nobuf"
     elif layerType == "Wildlife_Observations":
-        outlocation = newpath_endangered + "\\\\" + endangered_gdb + "\\\\EDW_FishWildlife_Observation_2017_Endangered_nobuf"
+        outlocation += "EDW_FishWildlife_Observation_2017_Endangered_nobuf"
     elif layerType == "Critical_Habitat_Polygons":
-        outlocation = newpath_endangered + "\\\\" + endangered_gdb + "\\\\CHabPolyAllSelectedSpecies_2017_Endangered_nobuf"
+        outlocation += "CHabPolyAllSelectedSpecies_2017_Endangered_nobuf"
     elif layerType == "CNDDB":
-        outlocation = newpath_endangered + "\\\\" + endangered_gdb + "\\\\CNDDB_selects_2017_Endangered_nobuf"
+        outlocation += "CNDDB_selects_2017_Endangered_nobuf"
 
     arcpy.AddMessage("Copying selected records to Endangered Geodatabase ......")
     arcpy.CopyFeatures_management("lyr", outlocation)
@@ -471,11 +476,9 @@ try:
     count = int(result.getOutput(0))
     arcpy.AddMessage("Total Number of Endangered Records: " + str(count))
 
-
-
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 # Tested below pieces - commenting out to test attribution
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
     outFeatureClass = outtable + "_singlepart"
 
     arcpy.AddMessage("Converting multipart geometry to singlepart .....")
@@ -538,7 +541,7 @@ try:
     arcpy.AddMessage("Script complete ... check data and make changes ... then proceed to intersection")
 
     # -----------------------------------------------------------------------------------
-    #  Note this process will be run in another script within an
+    #  and Note this process will be run in another script within an
     #  ArcGIS Pro environment using PairwiseIntersect_analysis
     # -----------------------------------------------------------------------------------
     # arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)

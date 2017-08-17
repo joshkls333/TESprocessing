@@ -17,9 +17,9 @@ in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
 local_gdb = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\Local_Data\\2017_Local_CAALB83.gdb\\"
 local_data = local_gdb + "\\Explode"
 
-layerType = "TESP"
+# layerType = "TESP"
 
-# layerType = sys.argv[2]
+layerType = sys.argv[2]
 
 sr = arcpy.SpatialReference(3310)
 
@@ -55,8 +55,8 @@ fra_threatened_gdb = "2017_FRA_Threatened_OriginalDataBufferedAndNonBufferedArea
 fra_endangered_gdb = "2017_FRA_Endangered_OriginalDataBufferedAndNonBufferedAreas_CAALAB83.gdb"
 fra_sensitive_gdb  = "2017_FRA_Sensitive_OriginalDataBufferedAndNonBufferedAreas_CAALAB83.gdb"
 
-if arcpy.Exists(newpath_threatened + "\\" + threatened_gdb):
-    arcpy.AddMessage("Threatened GDB exists")
+if arcpy.Exists(newpath_sensitive + "\\" + sensitive_gdb):
+    arcpy.AddMessage("Sensitive GDB exists")
 else:
     arcpy.AddMessage("Creating Geodatabase for Sensitive Data Deliverables containing intersection data ....")
     arcpy.CreateFileGDB_management(newpath_sensitive, sensitive_gdb)
@@ -69,12 +69,28 @@ else:
     arcpy.CreateFileGDB_management(newpath_endangered, endangered_gdb)
     arcpy.CreateFileGDB_management(newpath_endangered, fra_endangered_gdb)
 
-if arcpy.Exists(newpath_sensitive + "\\" + sensitive_gdb):
-    arcpy.AddMessage("Sensitive GDB exists")
+if arcpy.Exists(newpath_threatened + "\\" + threatened_gdb):
+        arcpy.AddMessage("Threatened GDB exists")
 else:
     arcpy.AddMessage("Creating Geodatabase for Threatened Data Deliverables containing intersection data ....")
     arcpy.CreateFileGDB_management(newpath_threatened, threatened_gdb)
     arcpy.CreateFileGDB_management(newpath_threatened, fra_threatened_gdb)
+
+
+# def interim_filename(layer, location):
+#
+#     if layer == "TESP":
+#         location += "EDW_TESP_2017_Sensitive_OccurrenceAll_FoundPlants_nobuf"
+#     elif layer == "Wildlife_Sites":
+#         location += "EDW_WildlifeSites_2017_Sensitive_nobuf"
+#     elif layer == "Wildlife_Observations":
+#         location += "EDW_FishWildlife_Observation_2017_Sensitive_nobuf"
+#     elif layer == "Critical_Habitat_Polygons":
+#         location += "CHabPolyAllSelectedSpecies_2017_Sensitive_nobuf"
+#     elif layer == "CNDDB":
+#         location += "CNDDB_selects_2017_Sensitive_nobuf"
+#     elif layer == "Local":
+#         location += filename
 
 
 def copy_to_final_gdb(filename):
