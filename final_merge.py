@@ -158,3 +158,62 @@ arcpy.Rename_management(final_no_thr_fc_old,final_no_thr_fc)
 arcpy.Rename_management(final_no_sen_fc_old,final_no_sen_fc)
 
 arcpy.AddMessage("Export complete")
+
+arcpy.AddMessage("Dissolving Endangered Features")
+
+dissolveEndFeatureClass = final_no_end_fc + "_dissolved"
+
+# arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,["UnitID", "GRANK_FIRE"])
+
+arcpy.Dissolve_management(final_no_end_fc, dissolveEndFeatureClass,["UnitID", "GRANK_FIRE"], "", "SINGLE_PART")
+
+arcpy.AddMessage("Repairing Dissolved Geometry ......")
+arcpy.RepairGeometry_management(dissolveEndFeatureClass)
+arcpy.AddMessage("Dissolve and Repair complete")
+
+arcpy.AddMessage("Dissolving Threatened Features")
+
+dissolveThrFeatureClass = final_no_thr_fc + "_dissolved"
+
+# arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,["UnitID", "GRANK_FIRE"])
+
+arcpy.Dissolve_management(final_no_thr_fc, dissolveThrFeatureClass,["UnitID", "GRANK_FIRE"], "", "SINGLE_PART")
+
+arcpy.AddMessage("Repairing Dissolved Geometry ......")
+arcpy.RepairGeometry_management(dissolveThrFeatureClass)
+arcpy.AddMessage("Dissolve and Repair complete")
+
+arcpy.AddMessage("Dissolving Sensitive Features")
+
+dissolveSenFeatureClass = final_no_sen_fc + "_dissolved"
+
+# arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,["UnitID", "GRANK_FIRE"])
+
+arcpy.Dissolve_management(final_no_sen_fc, dissolveSenFeatureClass,["UnitID", "GRANK_FIRE"], "", "SINGLE_PART")
+
+arcpy.AddMessage("Repairing Dissolved Geometry ......")
+arcpy.RepairGeometry_management(dissolveSenFeatureClass)
+arcpy.AddMessage("Dissolve and Repair complete")
+
+arcpy.AddMessage("Exporting dissolved feature classes to final distributable Geodatabase")
+
+arcpy.FeatureClassToGeodatabase_conversion(dissolveEndFeatureClass, final_wksp)
+arcpy.FeatureClassToGeodatabase_conversion(dissolveThrFeatureClass, final_wksp)
+arcpy.FeatureClassToGeodatabase_conversion(dissolveSenFeatureClass, final_wksp)
+
+final_end_fc_old = final_wksp + "\\" + "FireRetardantEIS_Endangered_NoDistribution_dissolved"
+final_thr_fc_old = final_wksp + "\\" + "FireRetardantEIS_Threatened_NoDistribution_dissolved"
+final_sen_fc_old = final_wksp + "\\" + "FireRetardantEIS_Sensitive_NoDistribution_dissolved"
+
+final_end_fc = final_wksp + "\\" + "FireRetardantEIS_Endangered"
+final_thr_fc = final_wksp + "\\" + "FireRetardantEIS_Threatened"
+final_sen_fc = final_wksp + "\\" + "FireRetardantEIS_Sensitive"
+
+arcpy.Rename_management(final_end_fc_old,final_end_fc)
+arcpy.Rename_management(final_thr_fc_old,final_thr_fc)
+arcpy.Rename_management(final_sen_fc_old,final_sen_fc)
+
+arcpy.AddMessage("Export Complete!!")
+
+
+
