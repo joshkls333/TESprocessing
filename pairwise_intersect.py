@@ -257,7 +257,7 @@ try:
     arcpy.AddMessage("Completed Script successfully!!")
 
 except arcpy.ExecuteError:
-    arcpy.GetMessages()
+    arcpy.AddError(arcpy.GetMessages(2))
 except Exception as e:
     arcpy.AddMessage(e)
 
