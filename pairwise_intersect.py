@@ -83,8 +83,6 @@ else:
 
 def copy_to_final_gdb(filename, dissolvedfc):
 
-    # --------------Copying to Sensitive Geodatabase for interim deliverable step
-
     tesvariablelist = ["Endangered", "Threatened", "Sensitive"]
 
     for tes in tesvariablelist:
@@ -96,8 +94,6 @@ def copy_to_final_gdb(filename, dissolvedfc):
 
         finallocation = in_workspace + "2017_" + tes + "\\2017_" + tes + "_IdentInter_CAALAB83.gdb\\"
 
-        # finallocation += interim_filename(layerType, filename)
-
         if layerType == "TESP":
             finallocation += "EDW_TESP_2017_" + tes + "_OccurrenceAll_FoundPlants_nobuf"
         elif layerType == "Wildlife_Sites":
@@ -105,6 +101,8 @@ def copy_to_final_gdb(filename, dissolvedfc):
         elif layerType == "Wildlife_Observations":
             finallocation += "EDW_FishWildlife_Observation_2017_" + tes + "_nobuf"
         elif layerType == "Critical_Habitat_Polygons":
+            finallocation += "CHabPolyAllSelectedSpecies_2017_" + tes + "_nobuf"
+        elif layerType == "Critical_Habitat_Lines":
             finallocation += "CHabPolyAllSelectedSpecies_2017_" + tes + "_nobuf"
         elif layerType == "CNDDB":
             finallocation += "CNDDB_selects_2017_" + tes + "_nobuf"
