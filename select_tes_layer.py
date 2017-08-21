@@ -23,30 +23,42 @@ arcpy.env.overwriteOutput = True
 # for different stages of the processing of the individual databases
 # -------------------------------------------------------------------------------
 
-newPath_threatened = in_workspace + "2017_Threatened"
-threatened_gdb = "2017_FRA_Threatened_OriginalDataNoBuffers_FWSDeliverable_CAALAB83.gdb"
-newPath_endangered = in_workspace + "2017_Endangered"
-endangered_gdb = "2017_FRA_Endangered_OriginalDataNoBuffers_FWSDeliverable_CAALAB83.gdb"
-newPath_sensitive  = in_workspace + "2017_Sensitive"
-sensitive_gdb = "2017_FRA_Sensitive_OriginalDataNoBuffers_FWSDeliverable_CAALAB83.gdb"
+tesvariablelist = ["Endangered", "Threatened", "Sensitive"]
 
-if not os.path.exists(newPath_threatened):
-    arcpy.AddMessage("Creating directory for Threatened Data Deliverables ....")
-    os.makedirs(newPath_threatened)
-    arcpy.AddMessage("Creating Geodatabase for Threatened Data Deliverables ....")
-    arcpy.CreateFileGDB_management(newPath_threatened, threatened_gdb)
+for tes in tesvariablelist:
+    newPath = in_workspace + "2017_" + tes
+    tesGDB = "2017_FRA_" + tes + "_OriginalDataNoBuffers_FWSDeliverable_CAALAB83.gdb"
 
-if not os.path.exists(newPath_endangered):
-    arcpy.AddMessage("Creating directory for Endangered Data Deliverables ....")
-    os.makedirs(newPath_endangered)
-    arcpy.AddMessage("Creating Geodatabase for Endangered Data Deliverables ....")
-    arcpy.CreateFileGDB_management(newPath_endangered, endangered_gdb)
+    if not os.path.exists(newPath):
+        arcpy.AddMessage("Creating directory for "+ tes + " Data Deliverables ....")
+        os.makedirs(newPath)
+        arcpy.AddMessage("Creating Geodatabase for " + tes + " Data Deliverables ....")
+        arcpy.CreateFileGDB_management(newPath, tesGDB)
 
-if not os.path.exists(newPath_sensitive):
-    arcpy.AddMessage("Creating directory for Sensitive Data Deliverables ....")
-    os.makedirs(newPath_sensitive)
-    arcpy.AddMessage("Creating Geodatabase for Sensitive Data Deliverables ....")
-    arcpy.CreateFileGDB_management(newPath_sensitive, sensitive_gdb)
+# newPath_threatened = in_workspace + "2017_Threatened"
+# threatened_gdb = "2017_FRA_Threatened_OriginalDataNoBuffers_FWSDeliverable_CAALAB83.gdb"
+# newPath_endangered = in_workspace + "2017_Endangered"
+# endangered_gdb = "2017_FRA_Endangered_OriginalDataNoBuffers_FWSDeliverable_CAALAB83.gdb"
+# newPath_sensitive  = in_workspace + "2017_Sensitive"
+# sensitive_gdb = "2017_FRA_Sensitive_OriginalDataNoBuffers_FWSDeliverable_CAALAB83.gdb"
+#
+# if not os.path.exists(newPath_threatened):
+#     arcpy.AddMessage("Creating directory for Threatened Data Deliverables ....")
+#     os.makedirs(newPath_threatened)
+#     arcpy.AddMessage("Creating Geodatabase for Threatened Data Deliverables ....")
+#     arcpy.CreateFileGDB_management(newPath_threatened, threatened_gdb)
+#
+# if not os.path.exists(newPath_endangered):
+#     arcpy.AddMessage("Creating directory for Endangered Data Deliverables ....")
+#     os.makedirs(newPath_endangered)
+#     arcpy.AddMessage("Creating Geodatabase for Endangered Data Deliverables ....")
+#     arcpy.CreateFileGDB_management(newPath_endangered, endangered_gdb)
+#
+# if not os.path.exists(newPath_sensitive):
+#     arcpy.AddMessage("Creating directory for Sensitive Data Deliverables ....")
+#     os.makedirs(newPath_sensitive)
+#     arcpy.AddMessage("Creating Geodatabase for Sensitive Data Deliverables ....")
+#     arcpy.CreateFileGDB_management(newPath_sensitive, sensitive_gdb)
 
 # --------------------------------------------------------------------------------
 #  Please note the following selections of inTable and csv are file dependent
@@ -54,9 +66,9 @@ if not os.path.exists(newPath_sensitive):
 
 # inTable = sys.argv[2]
 
-# layerType = sys.argv[4]
+layerType = sys.argv[4]
 
-layerType = "CNDDB"
+# layerType = "CNDDB"
 
 layerWorkSpace = in_workspace + "\\" + layerType + "\\"
 projectedGDB = layerType + "_Test_2017_CAALB83_newproj.gdb"
@@ -414,9 +426,6 @@ try:
         arcpy.AddMessage("Selecting records based on " + tesRank + " rank ....")
         arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION", "GRANK_FIRE = '" + tesRank + "'")
 
-        newpath_sensitive = in_workspace + "2017_Sensitive"
-        sensitive_gdb = "2017_FRA_Sensitive_OriginalDataNoBuffers_FWSDeliverable_CAALAB83.gdb"
-
         outlocation = in_workspace + "2017_" + tesRank + "\\" + "2017_FRA_" + \
                       tesRank + "_OriginalDataNoBuffers_FWSDeliverable_CAALAB83.gdb" + "\\"
 
@@ -443,7 +452,9 @@ try:
 
 # ----------------------------------------------------------------------
 
-    singlePartFeatureClass = selectFC + "_singlepart"
+    singlePartFeatureClass = newProjectWorkSpace + "_singlepart"
+    bufferFC = newProjectWorkSpace + "_buffer"
+    singlePartBufferedFC = newProjectWorkSpace + "_buffered_single"
 
     arcpy.AddMessage("Converting multipart geometry to singlepart .....")
 
@@ -457,10 +468,7 @@ try:
     arcpy.AddMessage("Repairing Geometry ......")
     arcpy.RepairGeometry_management(singlePartFeatureClass)
 
-    bufferFC = selectFC + "_buffer"
-    singlePartBufferedFC = bufferFC + "_buffered_spart"
-
-    if layerType != "Critical_Habitat_Polygons" or layerType != "Critical_Habitat_Lines":
+    if layerType != "Critical_Habitat_Polygons" and layerType != "Critical_Habitat_Lines":
         arcpy.AddMessage("Buffering features ....")
         bufferField = "BUFFM_FIRE"
         arcpy.Buffer_analysis(singlePartFeatureClass, bufferFC, bufferField)

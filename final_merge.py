@@ -21,38 +21,39 @@ arcpy.env.workspace = in_workspace
 
 arcpy.env.overwriteOutput = True
 
-newpath_threatened = in_workspace + "2017_Threatened"
-newpath_endangered = in_workspace + "2017_Endangered"
-newpath_sensitive  = in_workspace + "2017_Sensitive"
+# newpath_threatened = in_workspace + "2017_Threatened"
+# newpath_endangered = in_workspace + "2017_Endangered"
+# newpath_sensitive  = in_workspace + "2017_Sensitive"
+#
+# merge_threatened_gdb = "2017_Threatened_Merged_CAALB83.gdb"
+# merge_endangered_gdb = "2017_Endangered_Merged_CAALB83.gdb"
+# merge_sensitive_gdb  = "2017_Sensitive_Merged_CAALB83.gdb"
 
-merge_threatened_gdb = "2017_Threatened_Merged_CAALAB83.gdb"
-merge_endangered_gdb = "2017_Endangered_Merged_CAALAB83.gdb"
-merge_sensitive_gdb  = "2017_Sensitive_Merged_CAALAB83.gdb"
+# merge_thr_gdb_wkspace = newpath_threatened + "\\" + merge_threatened_gdb + "\\"
+# merge_end_gdb_wkspace = newpath_endangered + "\\" + merge_endangered_gdb + "\\"
+# merge_sen_gdb_wkspace = newpath_sensitive + "\\" + merge_sensitive_gdb + "\\"
+
+# if arcpy.Exists(merge_sen_gdb_wkspace):
+#     arcpy.AddMessage("Sensitive GDB exists")
+# else:
+#     arcpy.AddMessage("Creating Geodatabase for Sensitive Data Deliverables containing merged data")
+#     arcpy.CreateFileGDB_management(newpath_sensitive, merge_sensitive_gdb)
+#
+# if arcpy.Exists(merge_end_gdb_wkspace):
+#     arcpy.AddMessage("Endangered GDB exists")
+# else:
+#     arcpy.AddMessage("Creating Geodatabase for Endangered Data Deliverables containing merged data")
+#     arcpy.CreateFileGDB_management(newpath_endangered, merge_endangered_gdb)
+#
+# if arcpy.Exists(merge_thr_gdb_wkspace):
+#     arcpy.AddMessage("Threatened GDB exists")
+# else:
+#     arcpy.AddMessage("Creating Geodatabase for Threatened Data Deliverables containing merged data")
+#     arcpy.CreateFileGDB_management(newpath_threatened, merge_threatened_gdb)
+#
 
 final_r05_nodist_gdb = "2017_S_R05_FireRetardantEIS_CAALB83_NoDistribution_FWS.gdb"
 final_r05_dist_gdb   = "2017_S_R05_FireRetardantEIS_CAALB83_DistributableDatasets.gdb"
-
-merge_thr_gdb_wkspace = newpath_threatened + "\\" + merge_threatened_gdb + "\\"
-merge_end_gdb_wkspace = newpath_endangered + "\\" + merge_endangered_gdb + "\\"
-merge_sen_gdb_wkspace = newpath_sensitive + "\\" + merge_sensitive_gdb + "\\"
-
-if arcpy.Exists(merge_sen_gdb_wkspace):
-    arcpy.AddMessage("Sensitive GDB exists")
-else:
-    arcpy.AddMessage("Creating Geodatabase for Sensitive Data Deliverables containing merged data")
-    arcpy.CreateFileGDB_management(newpath_sensitive, merge_sensitive_gdb)
-
-if arcpy.Exists(merge_end_gdb_wkspace):
-    arcpy.AddMessage("Endangered GDB exists")
-else:
-    arcpy.AddMessage("Creating Geodatabase for Endangered Data Deliverables containing merged data")
-    arcpy.CreateFileGDB_management(newpath_endangered, merge_endangered_gdb)
-
-if arcpy.Exists(merge_thr_gdb_wkspace):
-    arcpy.AddMessage("Threatened GDB exists")
-else:
-    arcpy.AddMessage("Creating Geodatabase for Threatened Data Deliverables containing merged data")
-    arcpy.CreateFileGDB_management(newpath_threatened, merge_threatened_gdb)
 
 if arcpy.Exists(final_r05_nodist_gdb):
     arcpy.AddMessage("Final FWS GDB not for distribution exists")
@@ -66,78 +67,117 @@ else:
     arcpy.AddMessage("Creating Final Geodatabase with distrubatable Data Deliverables containing merged data")
     arcpy.CreateFileGDB_management(in_workspace, final_r05_dist_gdb)
 
-end_workspace = newpath_endangered + "\\" + "2017_Endangered_IdentInter_CAALAB83.gdb"
-thr_workspace = newpath_threatened + "\\" + "2017_Threatened_IdentInter_CAALAB83.gdb"
-sen_workspace = newpath_sensitive  + "\\" + "2017_Sensitive_IdentInter_CAALAB83.gdb"
-
 final_no_wksp = in_workspace + "\\" + final_r05_nodist_gdb
 final_wksp    = in_workspace + "\\" + final_r05_dist_gdb
 
-arcpy.env.workspace = end_workspace
+try:
 
-fcList = arcpy.ListFeatureClasses()
+    tesvariablelist = ["Endangered", "Threatened", "Sensitive"]
 
-end_inputs = ""
+    for tes in tesvariablelist:
+        merge_gdb = "2017_" + tes + "_Merged_CAALAB83.gdb"
+        newpath = in_workspace + "2017_" + tes
+        tes_workspace = newpath + "\\" + "2017_" + tes + "_IdentInter_CAALAB83.gdb"
+        arcpy.env.workspace = tes_workspace
 
-arcpy.AddMessage("List of features being merged:")
-for fc in fcList:
-    end_inputs += os.path.join(arcpy.env.workspace, fc)
-    end_inputs += ";"
-    arcpy.AddMessage("   " + fc)
+        if arcpy.Exists(tes_workspace):
+            arcpy.AddMessage(tes + " GDB exists")
+        else:
+            arcpy.AddMessage("Creating Geodatabase for " + tes + " Data Deliverables containing merged data")
+            arcpy.CreateFileGDB_management(newpath, merge_gdb)
 
-end_inputs = end_inputs.replace("\\", "\\\\")
+        fcList = arcpy.ListFeatureClasses()
 
-merge_end_fc = merge_end_gdb_wkspace + "\\" + "FireRetardantEIS_Endangered_Merged"
+        inputs = ""
 
-arcpy.AddMessage("Merging Endangered feature classes")
+        arcpy.AddMessage("List of features being merged:")
+        for fc in fcList:
+            inputs += os.path.join(arcpy.env.workspace, fc)
+            inputs += ";"
+            arcpy.AddMessage("   " + fc)
 
-arcpy.Merge_management(end_inputs, merge_end_fc)
 
-arcpy.AddMessage("Finished merging endangered feature classes")
+        merge_fc = newpath + "\\" + merge_gdb + "\\" + "FireRetardantEIS_" + tes + "_Merged"
 
-arcpy.env.workspace = thr_workspace
+        arcpy.AddMessage("Merging " + tes + " feature classes")
 
-fcList = arcpy.ListFeatureClasses()
+        arcpy.Merge_management(inputs, merge_fc)
 
-thr_inputs = ""
+        arcpy.AddMessage("Finished merging " + tes + " feature classes")
 
-arcpy.AddMessage("List of features being merged:")
-for fc in fcList:
-    thr_inputs += os.path.join(arcpy.env.workspace, fc)
-    thr_inputs += ";"
-    arcpy.AddMessage("   " + fc)
+except arcpy.ExecuteError:
+    arcpy.AddError(arcpy.GetMessages(2))
+except Exception as e:
+    arcpy.AddMessage(e)
 
-thr_inputs = thr_inputs.replace("\\", "\\\\")
 
-merge_thr_fc = merge_thr_gdb_wkspace + "\\" + "FireRetardantEIS_Threatened_Merged"
 
-arcpy.AddMessage("Merging Threatened feature classes")
 
-arcpy.Merge_management(thr_inputs, merge_thr_fc)
+# arcpy.env.workspace = end_workspace
+#
+# fcList = arcpy.ListFeatureClasses()
+#
+# end_inputs = ""
+#
+# arcpy.AddMessage("List of features being merged:")
+# for fc in fcList:
+#     end_inputs += os.path.join(arcpy.env.workspace, fc)
+#     end_inputs += ";"
+#     arcpy.AddMessage("   " + fc)
+#
+# # end_inputs = end_inputs.replace("\\", "\\\\")
+#
+# merge_end_fc = merge_end_gdb_wkspace + "\\" + "FireRetardantEIS_Endangered_Merged"
+#
+# arcpy.AddMessage("Merging Endangered feature classes")
+#
+# arcpy.Merge_management(end_inputs, merge_end_fc)
+#
+# arcpy.AddMessage("Finished merging endangered feature classes")
 
-arcpy.AddMessage("Finished merging threatened feature classes")
+# arcpy.env.workspace = thr_workspace
+#
+# fcList = arcpy.ListFeatureClasses()
+#
+# thr_inputs = ""
+#
+# arcpy.AddMessage("List of features being merged:")
+# for fc in fcList:
+#     thr_inputs += os.path.join(arcpy.env.workspace, fc)
+#     thr_inputs += ";"
+#     arcpy.AddMessage("   " + fc)
+#
+# thr_inputs = thr_inputs.replace("\\", "\\\\")
+#
+# merge_thr_fc = merge_thr_gdb_wkspace + "\\" + "FireRetardantEIS_Threatened_Merged"
+#
+# arcpy.AddMessage("Merging Threatened feature classes")
+#
+# arcpy.Merge_management(thr_inputs, merge_thr_fc)
+#
+# arcpy.AddMessage("Finished merging threatened feature classes")
 
-arcpy.env.workspace = sen_workspace
-
-fcList = arcpy.ListFeatureClasses()
-
-sen_inputs = ""
-
-arcpy.AddMessage("List of features being merged:")
-for fc in fcList:
-    sen_inputs += os.path.join(arcpy.env.workspace, fc)
-    sen_inputs += ";"
-    arcpy.AddMessage("   " + fc)
-
-sen_inputs = sen_inputs.replace("\\", "\\\\")
-
-merge_sen_fc = merge_sen_gdb_wkspace + "\\" + "FireRetardantEIS_Sensitive_Merged"
-
-arcpy.AddMessage("Merging Sensitive feature classes")
-
-arcpy.Merge_management(sen_inputs, merge_sen_fc)
-
-arcpy.AddMessage("Finished merging sensitive feature classes")
+# arcpy.env.workspace = sen_workspace
+#
+# fcList = arcpy.ListFeatureClasses()
+#
+# sen_inputs = ""
+#
+# arcpy.AddMessage("List of features being merged:")
+# for fc in fcList:
+#     sen_inputs += os.path.join(arcpy.env.workspace, fc)
+#     sen_inputs += ";"
+#     arcpy.AddMessage("   " + fc)
+#
+# sen_inputs = sen_inputs.replace("\\", "\\\\")
+#
+# merge_sen_fc = merge_sen_gdb_wkspace + "\\" + "FireRetardantEIS_Sensitive_Merged"
+#
+# arcpy.AddMessage("Merging Sensitive feature classes")
+#
+# arcpy.Merge_management(sen_inputs, merge_sen_fc)
+#
+# arcpy.AddMessage("Finished merging sensitive feature classes")
 
 arcpy.AddMessage("Exporting feature class to final non-distributable Geodatabase")
 
