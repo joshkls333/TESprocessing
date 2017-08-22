@@ -27,7 +27,7 @@ tesvariablelist = ["Endangered", "Threatened", "Sensitive"]
 
 for tes in tesvariablelist:
     newPath = in_workspace + "2017_" + tes
-    tesGDB = "2017_FRA_" + tes + "_OriginalDataNoBuffers_FWSDeliverable_CAALAB83.gdb"
+    tesGDB = "2017_FRA_" + tes + "_OriginalDataNoBuffers_FWSDeliverable_CAALB83.gdb"
 
     if not os.path.exists(newPath):
         arcpy.AddMessage("Creating directory for "+ tes + " Data Deliverables ....")
@@ -92,8 +92,6 @@ elif layerType == "Critical_Habitat_Lines":
     inTable += "\\CHab\\crithab_all_layers\\CRITHAB_LINE.shp"
 elif layerType == "Critical_Habitat_Polygons":
     inTable += "\\CHab\\crithab_all_layers\\CRITHAB_POLY.shp"
-elif layerType == "Critical_Habitat_Lines":
-    inTable += "\\CHab\\2017_CHab_CAALB83.gdb\\CHabLineAllSelectedSpecies2017"
 elif layerType == "CNDDB":
     inTable += "\\CNDDB\\gis_gov\\cnddb.shp"
 
@@ -144,7 +142,8 @@ arcpy.AddField_management(newProjectWorkSpace, "BUFFT_FIRE", "SHORT", "", "", ""
 arcpy.AddField_management(newProjectWorkSpace, "BUFFM_FIRE", "SHORT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
 arcpy.AddField_management(newProjectWorkSpace, "CMNT_FIRE", "TEXT", "", "", "150", "", "NULLABLE", "NON_REQUIRED", "")
 arcpy.AddField_management(newProjectWorkSpace, "INST_FIRE", "TEXT", "", "", "150", "", "NULLABLE", "NON_REQUIRED", "")
-
+if layerType == "CNDDB":
+    arcpy.AddField_management(newProjectWorkSpace, "Type", "TEXT", "", "", "50", "", "NULLABLE", "NON_REQUIRED", "")
 
 # Note the different ways of bringing in a csv for lookup data on the buffer amount, forest, and status
 # _____________________________________________________________________________________________________
@@ -244,19 +243,20 @@ elif layerType == "TESP":
 
 arcpy.AddMessage("The Selection Query will be : " + selectQuery)
 
-sqLength = int(len(selectQuery))
-n = int(round(len(selectQuery) / 100))
-
-arcpy.AddMessage("The Selection Query will be : " )
-arcpy.AddMessage("  " + selectQuery[0:n])
-arcpy.AddMessage("  " + selectQuery[n:n+100])
-arcpy.AddMessage("  " + selectQuery[n+100:n+200])
-arcpy.AddMessage("  " + selectQuery[n+200:n+300])
-arcpy.AddMessage("  " + selectQuery[n+300:n+400])
-arcpy.AddMessage("  " + selectQuery[n+400:n+800])
-arcpy.AddMessage("  " + selectQuery[n+800:sqLength-100])
-arcpy.AddMessage("  " + selectQuery[n+800:sqLength-100])
-arcpy.AddMessage("  " + selectQuery[sqLength-100:sqLength])
+# Need to clean this up so select query can be viewed:
+# sqLength = int(len(selectQuery))
+# n = int(round(len(selectQuery) / 100))
+#
+# arcpy.AddMessage("The Selection Query will be : " )
+# arcpy.AddMessage("  " + selectQuery[0:n])
+# arcpy.AddMessage("  " + selectQuery[n:n+100])
+# arcpy.AddMessage("  " + selectQuery[n+100:n+200])
+# arcpy.AddMessage("  " + selectQuery[n+200:n+300])
+# arcpy.AddMessage("  " + selectQuery[n+300:n+400])
+# arcpy.AddMessage("  " + selectQuery[n+400:n+800])
+# arcpy.AddMessage("  " + selectQuery[n+800:sqLength-100])
+# arcpy.AddMessage("  " + selectQuery[n+800:sqLength-100])
+# arcpy.AddMessage("  " + selectQuery[sqLength-100:sqLength])
 
 # -----------------------------------------------------------------------------------------
 
@@ -326,6 +326,7 @@ try:
 
                 if item[0].startswith(speciesrow):
                     row.GRANK_FIRE = item[1]
+                    row.TYPE = item[5]
 
                     if accuracy == "1/10 mile":
                         if item[2] == "300":
@@ -455,6 +456,8 @@ try:
     singlePartFeatureClass = newProjectWorkSpace + "_singlepart"
     bufferFC = newProjectWorkSpace + "_buffer"
     singlePartBufferedFC = newProjectWorkSpace + "_buffered_single"
+    projGDB = layerWorkSpace + "\\" + projectedGDB + "\\"
+    siteMerge = newProjectWorkSpace + "_merge"
 
     arcpy.AddMessage("Converting multipart geometry to singlepart .....")
 
@@ -485,7 +488,23 @@ try:
         arcpy.AddMessage("Repairing Geometry of singlepart buffer layer ......")
         arcpy.RepairGeometry_management(singlePartBufferedFC)
 
-    if layerType == "Wildlife_Observations":
+    if layerType == "CNDDB":
+
+        arcpy.AddMessage("Moving Shasta Crayfish files into Geodatabase")
+        tempWorkSpace = in_workspace + "\\CNDDB\\2017_CNDDB_CAALB83.gdb\\"
+        crayFlowLines = tempWorkSpace + "CNDDB_Endangered_ShastaCrayfish_NHDFlowlines"
+        crayWaterBodies = tempWorkSpace + "CNDDB_Endangered_ShastaCrayfish_NHDWaterbodies"
+        arcpy.FeatureClassToGeodatabase_conversion([crayFlowLines, crayWaterBodies], projGDB)
+
+        arcpy.AddMessage("Merging the Wildlife Sites feature class with the Shasta Crayfish files")
+        arcpy.Merge_management([crayFlowLines, crayWaterBodies, singlePartBufferedFC], siteMerge)
+        arcpy.AddMessage("Finished with merge")
+
+        arcpy.AddMessage("Repairing Geometry of merged layer")
+        arcpy.RepairGeometry_management(singlePartBufferedFC)
+
+    elif layerType == "Wildlife_Observations":
+
         arcpy.AddMessage("Breaking up into three layers prior to intersect")
         arcpy.MakeFeatureLayer_management(singlePartBufferedFC, "lyr")
 
@@ -499,6 +518,20 @@ try:
             arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION", "GRANK_FIRE = '" + tesRank +"'")
             arcpy.AddMessage("Copying selected records to " + tesRank + " Feature Class ......")
             arcpy.CopyFeatures_management("lyr", finalWorkSpace)
+
+    elif layerType == "Wildlife_Sites":
+        arcpy.AddMessage("Moving two MYLF study area files into Geodatabase")
+        tmpWorkSpace = in_workspace + "\\USFS_EDW\\2017_EDW_CAALB83.gdb\\"
+        studyFlowLines = tmpWorkSpace + "EDW_WildlifeSites_FRASelectionSet_CAALB_NHDFlowlines_MYLF_E_INFStudyAreas_buffered"
+        studyWaterBodies = tmpWorkSpace + "EDW_WildlifeSites_FRASelectionSet_CAALB_NHDWaterbodys_MYLF_E_INFStudyAreas_buffered"
+        arcpy.FeatureClassToGeodatabase_conversion([studyFlowLines, studyWaterBodies], projGDB)
+
+        arcpy.AddMessage("Merging the Wildlife Sites feature class with the two MYLF study area")
+        arcpy.Merge_management([studyFlowLines, studyWaterBodies, singlePartBufferedFC], siteMerge)
+        arcpy.AddMessage("Finished with merge")
+
+        arcpy.AddMessage("Repairing Geometry of merged layer")
+        arcpy.RepairGeometry_management(singlePartBufferedFC)
 
     arcpy.AddMessage("Script complete ... check data and make changes ... then proceed to intersection")
 

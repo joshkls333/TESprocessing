@@ -62,40 +62,57 @@ nameOfFile = outFeatClass
 nameOfFile = nameOfFile.replace('C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\NOAA_ESU\\2017_NOAA_ESU_CAALB83.gdb\\','')
 arcpy.AddMessage(nameOfFile)
 
-newpath_threatened = in_workspace + "2017_Threatened"
-newpath_endangered = in_workspace + "2017_Endangered"
-newpath_sensitive  = in_workspace + "2017_Sensitive"
+tesvariablelist = ["Endangered", "Threatened", "Sensitive"]
+
+for tes in tesvariablelist:
+
+    newPath = in_workspace + "2017_" + tes
+
+# newpath_threatened = in_workspace + "2017_Threatened"
+# newpath_endangered = in_workspace + "2017_Endangered"
+# newpath_sensitive  = in_workspace + "2017_Sensitive"
 
 # Geodatabases for final merge
-threatened_gdb = "2017_Threatened_IdentInter_CAALAB83.gdb"
-endangered_gdb = "2017_Endangered_IdentInter_CAALAB83.gdb"
-sensitive_gdb  = "2017_Sensitive_IdentInter_CAALAB83.gdb"
+    identInterGdb = "2017_" + tes + "_IdentInter_CAALB83.gdb"
+
+# threatened_gdb = "2017_Threatened_IdentInter_CAALB83.gdb"
+# endangered_gdb = "2017_Endangered_IdentInter_CAALB83.gdb"
+# sensitive_gdb  = "2017_Sensitive_IdentInter_CAALB83.gdb"
 
 # Geodatabases for FWS Deliverable
-fra_threatened_gdb = "2017_FRA_Threatened_OriginalDataBufferedAndNonBufferedAreas_CAALAB83.gdb"
-fra_endangered_gdb = "2017_FRA_Endangered_OriginalDataBufferedAndNonBufferedAreas_CAALAB83.gdb"
-fra_sensitive_gdb  = "2017_FRA_Sensitive_OriginalDataBufferedAndNonBufferedAreas_CAALAB83.gdb"
+    fraDeliverableGdb = "2017_FRA_" + tes + "_OriginalDataBufferedAndNonBufferedAreas_CAALB83.gdb"
 
-if arcpy.Exists(newpath_sensitive + "\\" + sensitive_gdb):
-    arcpy.AddMessage("Sensitive GDB exists")
-else:
-    arcpy.AddMessage("Creating Geodatabase for Sensitive Data Deliverables containing intersection data ....")
-    arcpy.CreateFileGDB_management(newpath_sensitive, sensitive_gdb)
-    arcpy.CreateFileGDB_management(newpath_sensitive, fra_sensitive_gdb)
+# fra_threatened_gdb = "2017_FRA_Threatened_OriginalDataBufferedAndNonBufferedAreas_CAALB83.gdb"
+# fra_endangered_gdb = "2017_FRA_Endangered_OriginalDataBufferedAndNonBufferedAreas_CAALB83.gdb"
+# fra_sensitive_gdb  = "2017_FRA_Sensitive_OriginalDataBufferedAndNonBufferedAreas_CAALB83.gdb"
 
-if arcpy.Exists(newpath_endangered + "\\" + endangered_gdb):
-    arcpy.AddMessage("Endangered GDB exists")
-else:
-    arcpy.AddMessage("Creating Geodatabase for Endangered Data Deliverables containing intersection data ....")
-    arcpy.CreateFileGDB_management(newpath_endangered, endangered_gdb)
-    arcpy.CreateFileGDB_management(newpath_endangered, fra_endangered_gdb)
+    if arcpy.Exists( newPath + "\\" + identInterGdb):
+        arcpy.AddMessage(tes + " GDB exists")
+    else:
+        arcpy.AddMessage("Creating Geodatabase for " + tes + " Data Deliverables containing intersection data ....")
+        arcpy.CreateFileGDB_management(newPath, identInterGdb)
+        arcpy.CreateFileGDB_management(newPath, fraDeliverableGdb)
 
-if arcpy.Exists(newpath_threatened + "\\" + threatened_gdb):
-        arcpy.AddMessage("Threatened GDB exists")
-else:
-    arcpy.AddMessage("Creating Geodatabase for Threatened Data Deliverables containing intersection data ....")
-    arcpy.CreateFileGDB_management(newpath_threatened, threatened_gdb)
-    arcpy.CreateFileGDB_management(newpath_threatened, fra_threatened_gdb)
+# if arcpy.Exists(newpath_sensitive + "\\" + sensitive_gdb):
+#     arcpy.AddMessage("Sensitive GDB exists")
+# else:
+#     arcpy.AddMessage("Creating Geodatabase for Sensitive Data Deliverables containing intersection data ....")
+#     arcpy.CreateFileGDB_management(newpath_sensitive, sensitive_gdb)
+#     arcpy.CreateFileGDB_management(newpath_sensitive, fra_sensitive_gdb)
+#
+# if arcpy.Exists(newpath_endangered + "\\" + endangered_gdb):
+#     arcpy.AddMessage("Endangered GDB exists")
+# else:
+#     arcpy.AddMessage("Creating Geodatabase for Endangered Data Deliverables containing intersection data ....")
+#     arcpy.CreateFileGDB_management(newpath_endangered, endangered_gdb)
+#     arcpy.CreateFileGDB_management(newpath_endangered, fra_endangered_gdb)
+#
+# if arcpy.Exists(newpath_threatened + "\\" + threatened_gdb):
+#         arcpy.AddMessage("Threatened GDB exists")
+# else:
+#     arcpy.AddMessage("Creating Geodatabase for Threatened Data Deliverables containing intersection data ....")
+#     arcpy.CreateFileGDB_management(newpath_threatened, threatened_gdb)
+#     arcpy.CreateFileGDB_management(newpath_threatened, fra_threatened_gdb)
 
 
 def copy_to_final_gdb(filename, dissolvedfc):
@@ -110,7 +127,7 @@ def copy_to_final_gdb(filename, dissolvedfc):
         arcpy.AddMessage("Selecting records based on " + tes + " rank ....")
         arcpy.SelectLayerByAttribute_management("tmplyr", "NEW_SELECTION", "GRANK_FIRE = '" + tes + "'")
 
-        finallocation = in_workspace + "2017_" + tes + "\\2017_" + tes + "_IdentInter_CAALAB83.gdb\\"
+        finallocation = in_workspace + "2017_" + tes + "\\2017_" + tes + "_IdentInter_CAALB83.gdb\\"
 
         if layerType == "TESP":
             outputname = "EDW_TESP_2017_" + tes + "_OccurrenceAll_FoundPlants_nobuf"
@@ -163,7 +180,7 @@ def copy_to_interim_gdb(filename):
         arcpy.SelectLayerByAttribute_management("tmplyr", "NEW_SELECTION", "GRANK_FIRE = '" + tes + "'")
 
         outlocation = in_workspace + "2017_" + tes + "\\" + "2017_FRA_" + \
-                      tes + "_OriginalDataBufferedAndNonBufferedAreas_CAALAB83.gdb" + "\\"
+                      tes + "_OriginalDataBufferedAndNonBufferedAreas_CAALB83.gdb" + "\\"
 
         if layerType == "TESP":
             interimoutput = "EDW_TESP_2017_OccurrenceAll_FoundPlants_ident_" + tes
@@ -185,7 +202,7 @@ def copy_to_interim_gdb(filename):
         arcpy.AddMessage("Total Number of Records: " + str(count))
 
         if count > 0:
-            arcpy.AddMessage("Copying " + layerType + " records to FWD Deliverable Stage " +
+            arcpy.AddMessage("Copying " + layerType + " records to FWS Deliverable Stage " +
                              tes + " Geodatabase as " + interimoutput)
             arcpy.CopyFeatures_management("tmplyr", outlocation)
         else:
@@ -204,13 +221,30 @@ def unitid_dissolve(filename):
     cur = arcpy.UpdateCursor(filename)
 
     field = "UnitID_FS"
+    fieldother = "Type"
+    fieldspecies = "SNAME_FIRE"
+    plant0512num = 0
 
     # populating UnitID field with UnitID_FS field
     for row in cur:
         row.UnitID = "0" + str(row.getValue(field))
         cur.updateRow(row)
+        # Used for deleting all the plant records in San Bernardino for CNDDB
+        if str(row.getValue(field)) == "512" and row.getValue(fieldother) == "PLANT":
+            cur.deleteRow(row)
+            plant0512num += 1
+            arcpy.AddMessage("deleted a row for 0512 Plant: " + row.getValue(fieldspecies))
 
     del cur
+
+    arcpy.AddMessage("Total records deleted because they were Plants from San Bernardino : " + str(plant0512num))
+
+    if layerType == "CNDDB":
+        with arcpy.da.UpdateCursor(intersectFeatureClass, ["Type", "UnitID"]) as cursor:
+            for row in cursor:
+                if row[0] == "PLANT" and row[1] == "0512":
+                    cursor.deleteRow()
+                    arcpy.AddMessage("Deleted row")
 
     arcpy.AddMessage("Repairing Geometry ......")
     arcpy.RepairGeometry_management(filename)
@@ -268,9 +302,10 @@ try:
             else:
                 intersectFeatureClass = noaaGdb + "\\" + intersectFeature
 
-#            arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
+            arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
 
-            arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
+            # arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
+
             arcpy.AddMessage("Completed Intersection")
 
             copy_to_interim_gdb(fc)
