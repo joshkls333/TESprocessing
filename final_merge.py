@@ -78,7 +78,7 @@ try:
     for tes in tesvariablelist:
         merge_gdb = "2017_" + tes + "_Merged_CAALB83.gdb"
         newpath = in_workspace + "2017_" + tes
-        tes_workspace = newpath + "\\" + "2017_" + tes + "_IdentInter_CAALAB83.gdb"
+        tes_workspace = newpath + "\\" + "2017_" + tes + "_IdentInter_CAALB83.gdb"
         arcpy.env.workspace = tes_workspace
 
         if arcpy.Exists(tes_workspace):

@@ -10,10 +10,11 @@ import arcpy
 import sys
 import csv
 import os
+import datetime
 
 # Set workspace or obtain from user input
-in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
-# in_workspace = sys.argv[1]
+# in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
+in_workspace = sys.argv[1]
 
 arcpy.env.workspace = in_workspace
 arcpy.env.overwriteOutput = True
@@ -23,10 +24,15 @@ arcpy.env.overwriteOutput = True
 # for different stages of the processing of the individual databases
 # -------------------------------------------------------------------------------
 
+# using the now variable to assign year everytime there is a hardcoded 2017
+now = datetime.datetime.today()
+curYear = str(now.year)
+arcpy.AddMessage("Year is " + curYear)
+
 tesvariablelist = ["Endangered", "Threatened", "Sensitive"]
 
 for tes in tesvariablelist:
-    newPath = in_workspace + "2017_" + tes
+    newPath = in_workspace + "\\2017_" + tes
     tesGDB = "2017_FRA_" + tes + "_OriginalDataNoBuffers_FWSDeliverable_CAALB83.gdb"
 
     if not os.path.exists(newPath):
@@ -35,65 +41,48 @@ for tes in tesvariablelist:
         arcpy.AddMessage("Creating Geodatabase for " + tes + " Data Deliverables ....")
         arcpy.CreateFileGDB_management(newPath, tesGDB)
 
-# newPath_threatened = in_workspace + "2017_Threatened"
-# threatened_gdb = "2017_FRA_Threatened_OriginalDataNoBuffers_FWSDeliverable_CAALAB83.gdb"
-# newPath_endangered = in_workspace + "2017_Endangered"
-# endangered_gdb = "2017_FRA_Endangered_OriginalDataNoBuffers_FWSDeliverable_CAALAB83.gdb"
-# newPath_sensitive  = in_workspace + "2017_Sensitive"
-# sensitive_gdb = "2017_FRA_Sensitive_OriginalDataNoBuffers_FWSDeliverable_CAALAB83.gdb"
-#
-# if not os.path.exists(newPath_threatened):
-#     arcpy.AddMessage("Creating directory for Threatened Data Deliverables ....")
-#     os.makedirs(newPath_threatened)
-#     arcpy.AddMessage("Creating Geodatabase for Threatened Data Deliverables ....")
-#     arcpy.CreateFileGDB_management(newPath_threatened, threatened_gdb)
-#
-# if not os.path.exists(newPath_endangered):
-#     arcpy.AddMessage("Creating directory for Endangered Data Deliverables ....")
-#     os.makedirs(newPath_endangered)
-#     arcpy.AddMessage("Creating Geodatabase for Endangered Data Deliverables ....")
-#     arcpy.CreateFileGDB_management(newPath_endangered, endangered_gdb)
-#
-# if not os.path.exists(newPath_sensitive):
-#     arcpy.AddMessage("Creating directory for Sensitive Data Deliverables ....")
-#     os.makedirs(newPath_sensitive)
-#     arcpy.AddMessage("Creating Geodatabase for Sensitive Data Deliverables ....")
-#     arcpy.CreateFileGDB_management(newPath_sensitive, sensitive_gdb)
-
 # --------------------------------------------------------------------------------
 #  Please note the following selections of inTable and csv are file dependent
 # --------------------------------------------------------------------------------
 
-# inTable = sys.argv[2]
+inTable = sys.argv[2]
 
 layerType = sys.argv[4]
 
 # layerType = "CNDDB"
 
-layerWorkSpace = in_workspace + "\\" + layerType + "\\"
+outputDir = in_workspace + "\\Output"
+if not os.path.exists(outputDir):
+    arcpy.AddMessage("Creating directory for Output")
+    os.makedirs(outputDir)
+
+if not os.path.exists(outputDir + "\\" + layerType):
+    arcpy.AddMessage("Creating output directory for " + layerType)
+    os.makedirs(outputDir + "\\" + layerType)
+
+layerWorkSpace = outputDir + "\\" + layerType + "\\"
 projectedGDB = layerType + "_Test_2017_CAALB83_newproj.gdb"
-foundFC = layerType + "_2017_Occurrence_found"
+foundFC = layerType + "_" + curYear + "_original"
 
 arcpy.AddMessage("Layer Type: " + layerType)
 
-#  Need to clean up how to set up workspaces especially if these layers need to be projected
 #-------------------------------------------------------------------------------------------
-
-inTable = in_workspace
+# the below is hardcoded values used for testing and debugging
+# inTable = in_workspace
 
 # if inTable == "#":
-if layerType == "TESP":
-    inTable += "\\TESP\\EDW_TESP_r05_021617_Everything.gdb\\TESP\\TESP_OccurrenceAll"
-elif layerType == "Wildlife_Sites":
-    inTable += "\\Wildlife\\EDW_FishWildlife_R05_021617_Everything.gdb\\Fish_and_Wildlife\\WildlifeSites"
-elif layerType == "Wildlife_Observations":
-    inTable += "\\Wildlife\\EDW_FishWildlife_R05_021617_Everything.gdb\\Fish_and_Wildlife\\FishWildlife_Observation"
-elif layerType == "Critical_Habitat_Lines":
-    inTable += "\\CHab\\crithab_all_layers\\CRITHAB_LINE.shp"
-elif layerType == "Critical_Habitat_Polygons":
-    inTable += "\\CHab\\crithab_all_layers\\CRITHAB_POLY.shp"
-elif layerType == "CNDDB":
-    inTable += "\\CNDDB\\gis_gov\\cnddb.shp"
+# if layerType == "TESP":
+#     inTable += "\\TESP\\EDW_TESP_r05_021617_Everything.gdb\\TESP\\TESP_OccurrenceAll"
+# elif layerType == "Wildlife_Sites":
+#     inTable += "\\Wildlife\\EDW_FishWildlife_R05_021617_Everything.gdb\\Fish_and_Wildlife\\WildlifeSites"
+# elif layerType == "Wildlife_Observations":
+#     inTable += "\\Wildlife\\EDW_FishWildlife_R05_021617_Everything.gdb\\Fish_and_Wildlife\\FishWildlife_Observation"
+# elif layerType == "Critical_Habitat_Lines":
+#     inTable += "\\CHab\\crithab_all_layers\\CRITHAB_LINE.shp"
+# elif layerType == "Critical_Habitat_Polygons":
+#     inTable += "\\CHab\\crithab_all_layers\\CRITHAB_POLY.shp"
+# elif layerType == "CNDDB":
+#     inTable += "\\CNDDB\\gis_gov\\cnddb.shp"
 
 #------------------------------------------------------------------------------
 # Testing to see if data is projected in NAD 1983 California Teale Albers
@@ -105,12 +94,6 @@ if arcpy.Exists(layerWorkSpace + "\\" + projectedGDB):
 else:
     arcpy.CreateFileGDB_management(layerWorkSpace, projectedGDB)
     newProjectWorkSpace = layerWorkSpace + "\\" + projectedGDB + "\\" + foundFC
-
-
-# if layerType == "Critical_Habitat_Polygons" or layerType == "CNDDB":
-#     selectFC = newspace + "_new"
-# else:
-#     selectFC = inTable + "_new"
 
 selectFC = newProjectWorkSpace + "_select"
 
@@ -132,6 +115,8 @@ if spatial_ref.name != "NAD_1983_California_Teale_Albers":
 
 arcpy.AddMessage("Adding fields [UnitID, GRANK_FIRE, SOURCEFIRE, SNAME_FIRE, CNAME_FIRE]")
 arcpy.AddMessage("Adding fields [BUFFT_FIRE, BUFFM_FIRE, CMNT_FIRE, INST_FIRE]")
+if layerType == "CNDDB":
+    arcpy.AddMessage("Adding field Type to record Plant vs Animal to filter later after intersection for removal of BDF")
 
 arcpy.AddField_management(newProjectWorkSpace, "UnitID", "TEXT", "", "", "5", "", "NULLABLE", "NON_REQUIRED", "")
 arcpy.AddField_management(newProjectWorkSpace, "GRANK_FIRE", "TEXT", "", "", "50", "", "NULLABLE", "NON_REQUIRED", "")
@@ -148,24 +133,22 @@ if layerType == "CNDDB":
 # Note the different ways of bringing in a csv for lookup data on the buffer amount, forest, and status
 # _____________________________________________________________________________________________________
 
-csvFile = in_workspace + "\\csv_tables"
+csvFile = sys.argv[3]
 
-# csvFile = sys.argv[3]
-
-# if csvFile == "#":
-
-if layerType == "TESP":
-    csvFile += "\\TESP_SummaryTable.csv"
-elif layerType == "Wildlife_Sites":
-    csvFile += "\\Wildlife_Sites_SummaryTable.csv"
-elif layerType == "Wildlife_Observations":
-    csvFile += "\\Wildlife_Observations_SummaryTable.csv"
-elif layerType == "Critical_Habitat_Polygons":
-    csvFile += "\\crithab.csv"
-elif layerType == "Critical_Habitat_Lines":
-    csvFile += "\\crithab.csv"
-elif layerType == "CNDDB":
-    csvFile += "\\CNDDB_SummaryTable.csv"
+# csvFile = in_workspace + "\\csv_tables"
+#
+# if layerType == "TESP":
+#     csvFile += "\\TESP_SummaryTable.csv"
+# elif layerType == "Wildlife_Sites":
+#     csvFile += "\\Wildlife_Sites_SummaryTable.csv"
+# elif layerType == "Wildlife_Observations":
+#     csvFile += "\\Wildlife_Observations_SummaryTable.csv"
+# elif layerType == "Critical_Habitat_Polygons":
+#     csvFile += "\\crithab.csv"
+# elif layerType == "Critical_Habitat_Lines":
+#     csvFile += "\\crithab.csv"
+# elif layerType == "CNDDB":
+#     csvFile += "\\CNDDB_SummaryTable.csv"
 
 arcpy.AddMessage("csv File: " + csvFile)
 
@@ -202,8 +185,11 @@ elif layerType == "CNDDB":
     commonNameField = "CNAME"
     sourceField = 'CA CNDDB GOV version pulled 2/2017'
 
+# --------------------------------------------------------------------
 # Builds the selection query used in SelectLayerByAttribute_management
-# customized based on what the Scientific name field is
+# customized based on what the Scientific name field is and what other
+# specifics we need to filter the data on based on the type of database
+# --------------------------------------------------------------------
 selectQuery = "(" + sciNameField + " = "
 
 selectionListLength = len(selectionList)
@@ -427,8 +413,8 @@ try:
         arcpy.AddMessage("Selecting records based on " + tesRank + " rank ....")
         arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION", "GRANK_FIRE = '" + tesRank + "'")
 
-        outlocation = in_workspace + "2017_" + tesRank + "\\" + "2017_FRA_" + \
-                      tesRank + "_OriginalDataNoBuffers_FWSDeliverable_CAALAB83.gdb" + "\\"
+        outlocation = in_workspace + "\\2017_" + tesRank + "\\" + "2017_FRA_" + \
+                      tesRank + "_OriginalDataNoBuffers_FWSDeliverable_CAALB83.gdb" + "\\"
 
         if layerType == "TESP":
             outlocation += "EDW_TESP_2017_" + tesRank + "_OccurrenceAll_FoundPlants_nobuf"
@@ -491,12 +477,13 @@ try:
     if layerType == "CNDDB":
 
         arcpy.AddMessage("Moving Shasta Crayfish files into Geodatabase")
+        # May need to change where this is being pulled
         tempWorkSpace = in_workspace + "\\CNDDB\\2017_CNDDB_CAALB83.gdb\\"
         crayFlowLines = tempWorkSpace + "CNDDB_Endangered_ShastaCrayfish_NHDFlowlines"
         crayWaterBodies = tempWorkSpace + "CNDDB_Endangered_ShastaCrayfish_NHDWaterbodies"
         arcpy.FeatureClassToGeodatabase_conversion([crayFlowLines, crayWaterBodies], projGDB)
 
-        arcpy.AddMessage("Merging the Wildlife Sites feature class with the Shasta Crayfish files")
+        arcpy.AddMessage("Merging the CNDDDB feature class with the Shasta Crayfish files")
         arcpy.Merge_management([crayFlowLines, crayWaterBodies, singlePartBufferedFC], siteMerge)
         arcpy.AddMessage("Finished with merge")
 
@@ -521,6 +508,7 @@ try:
 
     elif layerType == "Wildlife_Sites":
         arcpy.AddMessage("Moving two MYLF study area files into Geodatabase")
+        # May need to fix where this data is being pulled
         tmpWorkSpace = in_workspace + "\\USFS_EDW\\2017_EDW_CAALB83.gdb\\"
         studyFlowLines = tmpWorkSpace + "EDW_WildlifeSites_FRASelectionSet_CAALB_NHDFlowlines_MYLF_E_INFStudyAreas_buffered"
         studyWaterBodies = tmpWorkSpace + "EDW_WildlifeSites_FRASelectionSet_CAALB_NHDWaterbodys_MYLF_E_INFStudyAreas_buffered"

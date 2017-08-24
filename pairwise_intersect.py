@@ -138,7 +138,7 @@ def copy_to_final_gdb(filename, dissolvedfc):
         elif layerType == "Critical_Habitat_Polygons":
             outputname = "CHabPolyAllSelectedSpecies_2017_" + tes + "_nobuf"
         elif layerType == "Critical_Habitat_Lines":
-            outputname = "CHabPolyAllSelectedSpecies_2017_" + tes + "_nobuf"
+            outputname = "CHabLineAllSelectedSpecies_2017_" + tes + "_nobuf"
         elif layerType == "CNDDB":
             outputname = "CNDDB_selects_2017_" + tes + "_nobuf"
         elif layerType == "Condor_Hacking":
@@ -163,7 +163,6 @@ def copy_to_final_gdb(filename, dissolvedfc):
 
     arcpy.AddMessage("Complete copying data to final staging GDB")
     arcpy.AddMessage(" ____________________________________________________________________")
-    arcpy.AddMessage("                                                                     ")
     return
 
 
@@ -190,8 +189,10 @@ def copy_to_interim_gdb(filename):
             interimoutput = "EDW_FishWildlife_Observation_2017_" + tes[:1] + "_ident"
         elif layerType == "Critical_Habitat_Polygons":
             interimoutput = "CHabPolyAllSelectedSpecies_2017_nobuf_Ident_" + tes
+        elif layerType == "Critical_Habitat_Lines":
+            interimoutput = "CHabLineAllSelectedSpecies_2017_nobuf_Ident_" + tes
         elif layerType == "CNDDB":
-            interimoutput = "CNDDB_2017_All_selectsAndShastaCrayfish_Ident_noBDF_" + tes + "_nobuf"
+            interimoutput = "CNDDB_2017_All_selectsAndShastaCrayfish_Ident_noBDF_" + tes
         elif layerType == "Local" or layerType == "NOAA_ESU":
             interimoutput = filename
 
@@ -230,14 +231,16 @@ def unitid_dissolve(filename):
         row.UnitID = "0" + str(row.getValue(field))
         cur.updateRow(row)
         # Used for deleting all the plant records in San Bernardino for CNDDB
-        if str(row.getValue(field)) == "512" and row.getValue(fieldother) == "PLANT":
-            cur.deleteRow(row)
-            plant0512num += 1
-            arcpy.AddMessage("deleted a row for 0512 Plant: " + row.getValue(fieldspecies))
+        if layerType == "CNDDB":
+            if str(row.getValue(field)) == "512" and row.getValue(fieldother) == "PLANT":
+                cur.deleteRow(row)
+                plant0512num += 1
+                arcpy.AddMessage("deleted a row for 0512 Plant: " + row.getValue(fieldspecies))
 
     del cur
 
-    arcpy.AddMessage("Total records deleted because they were Plants from San Bernardino : " + str(plant0512num))
+    if layerType == "CNDDB":
+        arcpy.AddMessage("Total records deleted because they were Plants from San Bernardino : " + str(plant0512num))
 
     if layerType == "CNDDB":
         with arcpy.da.UpdateCursor(intersectFeatureClass, ["Type", "UnitID"]) as cursor:
