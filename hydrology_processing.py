@@ -50,6 +50,31 @@ nhdWaterbodyFC = "NHDWaterbody"
 
 waterFeatureList = [nhdAreaFC, nhdFlowlineFC, nhdWaterbodyFC]
 
+nhdAreaList = []
+nhdFlowlineList = []
+nhdWaterbodyList = []
+
+nhdAreaMerge = "NHDArea_Merge"
+nhdFlowlineMerge = "NHDFlowline_Merge"
+nhdWaterbodyMerge = "NHDWaterBody_Merge"
+nhdArea_WaterbodyMerge = "NHDWaterbody_Area_Merge"
+
+mergeList = [nhdAreaMerge, nhdFlowlineMerge, nhdWaterbodyMerge, nhdArea_WaterbodyMerge]
+
+nhdAreaBuffer = "NHDArea_Merge_Buff"
+nhdFlowlineBuffer = "NHDFlowline_Merge_Buff"
+nhdWaterbodyBuffer = "NHDWaterBody_Merge_Buff"
+nhdArea_WaterbodyBuffer = "NHDWaterbody_Area_Merge_Buff"
+
+bufferList = [nhdAreaMerge, nhdFlowlineMerge, nhdWaterbodyMerge, nhdArea_WaterbodyMerge]
+
+intersectList = []
+
+bufferField = "BUFFM_FIRE"
+
+usfsOwnershipFeatureClass = in_workspace + \
+                            "\\USFS_Ownership_LSRS\\2017_USFS_Ownership_CAALB83.gdb\\USFS_OwnershipLSRS_2017"
+
 try:
 
     if not os.path.exists(outputDir):
@@ -75,141 +100,219 @@ try:
             arcpy.AddMessage("Processing " + hydroGDB)
 
             for waterFeature in waterFeatureList:
-                arcpy.AddMessage("processing " + waterFeature)
-
-                flowlineShapefile = waterFeature + ".shp"
-
-                inHydroFD = hydroWorkspace + hydroGDB + hydroFeatureDataset
-                inHydroFC = inHydroFD + waterFeature
-                arcpy.AddMessage("Origin of Data: " + inHydroFC)
-
-                arcpy.AddMessage("Exporting " + waterFeature + " to shapefile for projecting")
-                arcpy.FeatureClassToShapefile_conversion(inHydroFC, outputWorkspace)
-
+                # arcpy.AddMessage("processing " + waterFeature)
+                #
+                # flowlineShapefile = waterFeature + ".shp"
+                #
+                # inHydroFD = hydroWorkspace + hydroGDB + hydroFeatureDataset
+                # inHydroFC = inHydroFD + waterFeature
+                # arcpy.AddMessage("Origin of Data: " + inHydroFC)
+                #
+                # arcpy.AddMessage("Exporting " + waterFeature + " to shapefile for projecting")
+                # arcpy.FeatureClassToShapefile_conversion(inHydroFC, outputWorkspace)
+                #
                 newShapefile = waterFeature + "_" + region
-
-                arcpy.Rename_management(outputWorkspace + waterFeature + ".shp", newShapefile)
-
-                inProjShapefile = outputWorkspace + newShapefile + ".shp"
-                outProjShapefile = outputWorkspace + newShapefile + "_proj.shp"
-
-                spatial_ref = arcpy.Describe(inProjShapefile).spatialReference
-
-                arcpy.AddMessage("Current Spatial Reference is : " + spatial_ref.name)
-
-                if spatial_ref.name != "NAD_1983_California_Teale_Albers":
-                    arcpy.AddMessage("Reprojecting shapefile to NAD 1983 California Teale Albers")
-                    arcpy.Project_management(inProjShapefile, outProjShapefile, sr)
-                    arcpy.AddMessage("reprojection complete")
-
-                arcpy.AddMessage("Converting shapefile to GDB")
-                arcpy.FeatureClassToGeodatabase_conversion(outProjShapefile, newHydroWorkSpace)
-                arcpy.AddMessage("Finished converting shapefile to GDB")
-
-                inSelectFC = newHydroWorkSpace + newShapefile + "_proj"
+                #
+                # arcpy.Rename_management(outputWorkspace + waterFeature + ".shp", newShapefile)
+                #
+                # inProjShapefile = outputWorkspace + newShapefile + ".shp"
+                # outProjShapefile = outputWorkspace + newShapefile + "_proj.shp"
+                #
+                # spatial_ref = arcpy.Describe(inProjShapefile).spatialReference
+                #
+                # arcpy.AddMessage("Current Spatial Reference is : " + spatial_ref.name)
+                #
+                # if spatial_ref.name != "NAD_1983_California_Teale_Albers":
+                #     arcpy.AddMessage("Reprojecting shapefile to NAD 1983 California Teale Albers")
+                #     arcpy.Project_management(inProjShapefile, outProjShapefile, sr)
+                #     arcpy.AddMessage("reprojection complete")
+                #
+                # arcpy.AddMessage("Converting shapefile to GDB")
+                # arcpy.FeatureClassToGeodatabase_conversion(outProjShapefile, newHydroWorkSpace)
+                # arcpy.AddMessage("Finished converting shapefile to GDB")
+                #
+                # inSelectFC = newHydroWorkSpace + newShapefile + "_proj"
                 selectFC = newHydroWorkSpace + newShapefile + "_select"
+                #
+                # selectQuery = ""
+                #
+                # if waterFeature == nhdFlowlineFC:
+                #     selectQuery = "( FCode = 46000 OR FCode = 46003 OR FCode = 46006 )"
+                # elif waterFeature == nhdWaterbodyFC:
+                #     selectQuery = "(  FType = 436 OR FType = 466 OR FType = 493 " \
+                #                   "OR FCode = 39004 OR FCode = 39009 OR FCode = 39010 OR FCode = 39011)"
+                # elif waterFeature == nhdAreaFC:
+                #     selectQuery = "( FCode = 46003 OR FCode = 46006 )"
+                #
+                # arcpy.MakeFeatureLayer_management(inSelectFC, "lyr" )
+                #
+                # arcpy.AddMessage("Selecting records based on selection ..")
+                # arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION", selectQuery )
+                #
+                # arcpy.AddMessage("Copying selected records to new feature ......")
+                # arcpy.CopyFeatures_management("lyr", selectFC)
+                #
+                # result = arcpy.GetCount_management(selectFC)
+                # count = int(result.getOutput(0))
+                # arcpy.AddMessage("Total Number of Records: " + str(count))
+                #
+                # arcpy.AddMessage("Adding fields")
+                #
+                # arcpy.AddField_management(selectFC, "UnitID", "TEXT", "", "", "5", "", "NULLABLE",
+                #                           "NON_REQUIRED", "")
+                # arcpy.AddField_management(selectFC, "GRANK_FIRE", "TEXT", "", "", "50", "", "NULLABLE",
+                #                           "NON_REQUIRED", "")
+                # arcpy.AddField_management(selectFC, "SOURCEFIRE", "TEXT", "", "", "50", "", "NULLABLE",
+                #                           "NON_REQUIRED", "")
+                # arcpy.AddField_management(selectFC, "SNAME_FIRE", "TEXT", "", "", "60", "", "NULLABLE",
+                #                           "NON_REQUIRED", "")
+                # arcpy.AddField_management(selectFC, "CNAME_FIRE", "TEXT", "", "", "60", "", "NULLABLE",
+                #                           "NON_REQUIRED", "")
+                # arcpy.AddField_management(selectFC, "BUFFT_FIRE", "SHORT", "", "", "", "", "NULLABLE",
+                #                           "NON_REQUIRED", "")
+                # arcpy.AddField_management(selectFC, "BUFFM_FIRE", "SHORT", "", "", "", "", "NULLABLE",
+                #                           "NON_REQUIRED", "")
+                # arcpy.AddField_management(selectFC, "CMNT_FIRE", "TEXT", "", "", "150", "", "NULLABLE",
+                #                           "NON_REQUIRED", "")
+                # arcpy.AddField_management(selectFC, "INST_FIRE", "TEXT", "", "", "150", "", "NULLABLE",
+                #                           "NON_REQUIRED", "")
+                #
+                # arcpy.AddMessage("Updating fields")
+                #
+                # cur = arcpy.UpdateCursor(selectFC)
+                #
+                # for row in cur:
+                #     fCodefield = row.getValue("FCode")
+                #     fTypefield = row.getValue("FType")
+                #
+                #     row.SOURCEFIRE = "NHD Subbasins " + curMonth + " " + curYear
+                #     row.SNAME_FIRE = "Hydro"
+                #     row.CNAME_FIRE = "Hydro"
+                #     row.BUFFT_FIRE = "300"
+                #     row.BUFFM_FIRE = 91.44
+                #     if waterFeature == nhdAreaFC:
+                #         row.GRANK_FIRE = "NHDArea Stream/River"
+                #     elif waterFeature == nhdWaterbodyFC:
+                #         row.GRANK_FIRE = "NHD Waterbody"
+                #     elif waterFeature == nhdFlowlineFC:
+                #         row.GRANK_FIRE = "NHDFlowline Stream/River"
+                #
+                #     if fCodefield == 46000:
+                #         row.CMNT_FIRE = "FCode 46000 - Stream/River"
+                #         row.INST_FIRE = "Stream/River"
+                #     elif fCodefield == 46003:
+                #         row.CMNT_FIRE = "FCode 46003 - Stream/River Intermittent"
+                #         row.INST_FIRE = "Stream/River Intermitten"
+                #     elif fCodefield == 46006:
+                #         row.CMNT_FIRE = "FCode 46006 - Stream/River Perennial"
+                #         row.INST_FIRE = "Stream/River Perennial"
+                #     elif fCodefield == 39004:
+                #         row.CMNT_FIRE = "FCode 39004 - LakePond Perennial"
+                #         row.INST_FIRE = "LakePond Perennial"
+                #     elif fCodefield == 39009:
+                #         row.CMNT_FIRE = "FCode 39009 - LakePond Perennial Average Stage"
+                #         row.INST_FIRE = "LakePond Perennial Average Stage"
+                #     elif fCodefield == 39010:
+                #         row.CMNT_FIRE = "FCode 39010 - LakePond Perennial Normal Pool"
+                #         row.INST_FIRE = "LakePond Perennial Normal Pool"
+                #     elif fCodefield == 39011:
+                #         row.CMNT_FIRE = "FCode 39011 - LakePond Perennial Date of Photography"
+                #         row.INST_FIRE = "LakePond Perennial Date of Photography"
+                #     elif  fTypefield == 436:
+                #         row.CMNT_FIRE = "FType 436 - Reservoir"
+                #         row.INST_FIRE = "Reservoir"
+                #     elif  fTypefield == 466:
+                #         row.CMNT_FIRE = "FType 466 - Swamp Marsh"
+                #         row.INST_FIRE = "Swamp Marsh"
+                #     elif  fTypefield == 493:
+                #         row.CMNT_FIRE = "FType 493 - Estuary"
+                #         row.INST_FIRE = "Estuary"
+                #
+                #     cur.updateRow(row)
+                #
+                # del cur
 
-                selectQuery = ""
-
-                if waterFeature == nhdFlowlineFC:
-                    selectQuery = "( FCode = 46000 OR FCode = 46003 OR FCode = 46006 )"
+                if waterFeature == nhdAreaFC:
+                    nhdAreaList.append(selectFC)
+                elif waterFeature == nhdFlowlineFC:
+                    nhdFlowlineList.append(selectFC)
                 elif waterFeature == nhdWaterbodyFC:
-                    selectQuery = "(  FType = 436 OR FType = 466 OR FType = 493 " \
-                                  "OR FCode = 39004 OR FCode = 39009 OR FCode = 39010 OR FCode = 39011)"
-                elif waterFeature == nhdAreaFC:
-                    selectQuery = "( FCode = 46003 OR FCode = 46006 )"
-
-                arcpy.MakeFeatureLayer_management(inSelectFC, "lyr" )
-
-                arcpy.AddMessage("Selecting records based on selection ..")
-                arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION", selectQuery )
-
-                arcpy.AddMessage("Copying selected records to new feature ......")
-                arcpy.CopyFeatures_management("lyr", selectFC)
-
-                result = arcpy.GetCount_management(selectFC)
-                count = int(result.getOutput(0))
-                arcpy.AddMessage("Total Number of Records: " + str(count))
-
-                arcpy.AddMessage("Adding fields")
-
-                arcpy.AddField_management(selectFC, "UnitID", "TEXT", "", "", "5", "", "NULLABLE",
-                                          "NON_REQUIRED", "")
-                arcpy.AddField_management(selectFC, "GRANK_FIRE", "TEXT", "", "", "50", "", "NULLABLE",
-                                          "NON_REQUIRED", "")
-                arcpy.AddField_management(selectFC, "SOURCEFIRE", "TEXT", "", "", "50", "", "NULLABLE",
-                                          "NON_REQUIRED", "")
-                arcpy.AddField_management(selectFC, "SNAME_FIRE", "TEXT", "", "", "60", "", "NULLABLE",
-                                          "NON_REQUIRED", "")
-                arcpy.AddField_management(selectFC, "CNAME_FIRE", "TEXT", "", "", "60", "", "NULLABLE",
-                                          "NON_REQUIRED", "")
-                arcpy.AddField_management(selectFC, "BUFFT_FIRE", "SHORT", "", "", "", "", "NULLABLE",
-                                          "NON_REQUIRED", "")
-                arcpy.AddField_management(selectFC, "BUFFM_FIRE", "SHORT", "", "", "", "", "NULLABLE",
-                                          "NON_REQUIRED", "")
-                arcpy.AddField_management(selectFC, "CMNT_FIRE", "TEXT", "", "", "150", "", "NULLABLE",
-                                          "NON_REQUIRED", "")
-                arcpy.AddField_management(selectFC, "INST_FIRE", "TEXT", "", "", "150", "", "NULLABLE",
-                                          "NON_REQUIRED", "")
-
-                arcpy.AddMessage("Updating fields")
-
-                cur = arcpy.UpdateCursor(selectFC)
-
-                for row in cur:
-                    fCodefield = row.getValue("FCode")
-                    fTypefield = row.getValue("FType")
-
-                    row.SOURCEFIRE = "NHD Subbasins " + curMonth + " " + curYear
-                    row.SNAME_FIRE = "Hydro"
-                    row.CNAME_FIRE = "Hydro"
-                    row.BUFFT_FIRE = "300"
-                    row.BUFFM_FIRE = 91.44
-                    if waterFeature == nhdAreaFC:
-                        row.GRANK_FIRE = "NHDArea Stream/River"
-                    elif waterFeature == nhdWaterbodyFC:
-                        row.GRANK_FIRE = "NHD Waterbody"
-                    elif waterFeature == nhdFlowlineFC:
-                        row.GRANK_FIRE = "NHDFlowline Stream/River"
-
-                    if fCodefield == 46000:
-                        row.CMNT_FIRE = "FCode 46000 - Stream/River"
-                        row.INST_FIRE = "Stream/River"
-                    elif fCodefield == 46003:
-                        row.CMNT_FIRE = "FCode 46003 - Stream/River Intermittent"
-                        row.INST_FIRE = "Stream/River Intermitten"
-                    elif fCodefield == 46006:
-                        row.CMNT_FIRE = "FCode 46006 - Stream/River Perennial"
-                        row.INST_FIRE = "Stream/River Perennial"
-                    elif fCodefield == 39004:
-                        row.CMNT_FIRE = "FCode 39004 - LakePond Perennial"
-                        row.INST_FIRE = "LakePond Perennial"
-                    elif fCodefield == 39009:
-                        row.CMNT_FIRE = "FCode 39009 - LakePond Perennial Average Stage"
-                        row.INST_FIRE = "LakePond Perennial Average Stage"
-                    elif fCodefield == 39010:
-                        row.CMNT_FIRE = "FCode 39010 - LakePond Perennial Normal Pool"
-                        row.INST_FIRE = "LakePond Perennial Normal Pool"
-                    elif fCodefield == 39011:
-                        row.CMNT_FIRE = "FCode 39011 - LakePond Perennial Date of Photography"
-                        row.INST_FIRE = "LakePond Perennial Date of Photography"
-                    elif  fTypefield == 436:
-                        row.CMNT_FIRE = "FType 436 - Reservoir"
-                        row.INST_FIRE = "Reservoir"
-                    elif  fTypefield == 466:
-                        row.CMNT_FIRE = "FType 466 - Swamp Marsh"
-                        row.INST_FIRE = "Swamp Marsh"
-                    elif  fTypefield == 493:
-                        row.CMNT_FIRE = "FType 493 - Estuary"
-                        row.INST_FIRE = "Estuary"
-
-                    cur.updateRow(row)
-
-                del cur
-
+                    nhdWaterbodyList.append(selectFC)
 
         else:
-            arcpy.AddMessage("GDB does not exist may need to download and unzip")
+            arcpy.AddMessage(region + " GDB does not exist may need to download and unzip")
+
+    # arcpy.AddMessage("Merging Flowlines")
+    # arcpy.Merge_management(nhdFlowlineList, outputProjGDB + "\\" +  nhdFlowlineMerge)
+    #
+    # arcpy.AddMessage("Merging Areas")
+    # arcpy.Merge_management(nhdAreaList, outputProjGDB + "\\" + nhdAreaMerge)
+    #
+    # arcpy.AddMessage("Merging Waterbodies")
+    # arcpy.Merge_management(nhdWaterbodyList, outputProjGDB + "\\" + nhdWaterbodyMerge)
+
+    # arcpy.AddMessage("Merging Areas and Waterbodies")
+    # arcpy.Merge_management([outputProjGDB + "\\" + nhdAreaMerge, outputProjGDB + "\\" + nhdWaterbodyMerge],
+    #                         outputProjGDB + "\\" + nhdArea_WaterbodyMerge)
+
+    for item in mergeList:
+        arcpy.AddMessage("Buffering " + item + " features ....")
+        bufferInput = outputProjGDB + "\\" + item
+        bufferOutput = outputProjGDB + "\\" + item + "_Buff"
+
+        arcpy.Buffer_analysis(bufferInput, bufferOutput, bufferField)
+
+        arcpy.AddMessage("Repairing Geometry of Buffered " + item)
+        arcpy.RepairGeometry_management(bufferOutput)
+
+        usfsOwnershipFeatureClass = in_workspace + \
+                                    "\\USFS_Ownership_LSRS\\2017_USFS_Ownership_CAALB83.gdb\\USFS_OwnershipLSRS_2017"
+
+        intersectFeatureClass = bufferOutput + "_intersect"
+
+        arcpy.AddMessage("Intersecting with USFS Ownership feature class .....")
+        arcpy.AddMessage("Please be patient while this runs .....")
+
+        #arcpy.Intersect_analysis([bufferOutput, usfsOwnershipFeatureClass], intersectFeatureClass)
+
+        arcpy.PairwiseIntersect_analysis([bufferOutput, usfsOwnershipFeatureClass], intersectFeatureClass)
+
+        arcpy.AddMessage("Completed Intersection")
+
+        arcpy.AddMessage(" ____________________________________________________________________")
+
+        arcpy.AddMessage("Updating UnitID field from intersection")
+
+        cur = arcpy.UpdateCursor(intersectFeatureClass)
+
+        field = "UnitID_FS"
+
+        # populating UnitID field with UnitID_FS field
+        for row in cur:
+            row.UnitID = "0" + str(row.getValue(field))
+            cur.updateRow(row)
+
+        del cur
+
+        arcpy.AddMessage("Repairing Geometry ......")
+        arcpy.RepairGeometry_management(intersectFeatureClass)
+
+        arcpy.AddMessage("Dissolving Features")
+
+        dissolveFeatureClass = intersectFeatureClass + "_dissolved"
+
+        arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
+                                        ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
+                                         "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"])
+
+        # arcpy.Dissolve_management(intersectFeatureClass, dissolveFeatureClass,
+        #                                 ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
+        #                                  "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"], "", "SINGLE_PART")
+
+        arcpy.AddMessage("Repairing Dissolved Geometry ......")
+        arcpy.RepairGeometry_management(dissolveFeatureClass)
+        arcpy.AddMessage("Dissolve and Repair complete")
+        arcpy.AddMessage(" ____________________________________________________________________")
 
 except arcpy.ExecuteError:
     arcpy.AddError(arcpy.GetMessages(2))
