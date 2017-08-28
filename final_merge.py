@@ -21,35 +21,52 @@ arcpy.env.workspace = in_workspace
 
 arcpy.env.overwriteOutput = True
 
-newpath_threatened = in_workspace + "2017_Threatened"
-newpath_endangered = in_workspace + "2017_Endangered"
-newpath_sensitive  = in_workspace + "2017_Sensitive"
+tesvariablelist = ["Endangered", "Threatened", "Sensitive"]
 
-merge_threatened_gdb = "2017_Threatened_Merged_CAALB83.gdb"
-merge_endangered_gdb = "2017_Endangered_Merged_CAALB83.gdb"
-merge_sensitive_gdb  = "2017_Sensitive_Merged_CAALB83.gdb"
+for tes in tesvariablelist:
 
-merge_thr_gdb_wkspace = newpath_threatened + "\\" + merge_threatened_gdb + "\\"
-merge_end_gdb_wkspace = newpath_endangered + "\\" + merge_endangered_gdb + "\\"
-merge_sen_gdb_wkspace = newpath_sensitive + "\\" + merge_sensitive_gdb + "\\"
+    newPath = in_workspace + "2017_" + tes
 
-if arcpy.Exists(merge_sen_gdb_wkspace):
-    arcpy.AddMessage("Sensitive GDB exists")
-else:
-    arcpy.AddMessage("Creating Geodatabase for Sensitive Data Deliverables containing merged data")
-    arcpy.CreateFileGDB_management(newpath_sensitive, merge_sensitive_gdb)
+# newpath_threatened = in_workspace + "2017_Threatened"
+# newpath_endangered = in_workspace + "2017_Endangered"
+# newpath_sensitive  = in_workspace + "2017_Sensitive"
 
-if arcpy.Exists(merge_end_gdb_wkspace):
-    arcpy.AddMessage("Endangered GDB exists")
-else:
-    arcpy.AddMessage("Creating Geodatabase for Endangered Data Deliverables containing merged data")
-    arcpy.CreateFileGDB_management(newpath_endangered, merge_endangered_gdb)
+    # Geodatabases for final merge
+    merge_gdb = "2017_" + tes + "_Merged_CAALB83.gdb"
 
-if arcpy.Exists(merge_thr_gdb_wkspace):
-    arcpy.AddMessage("Threatened GDB exists")
-else:
-    arcpy.AddMessage("Creating Geodatabase for Threatened Data Deliverables containing merged data")
-    arcpy.CreateFileGDB_management(newpath_threatened, merge_threatened_gdb)
+# merge_threatened_gdb = "2017_Threatened_Merged_CAALB83.gdb"
+# merge_endangered_gdb = "2017_Endangered_Merged_CAALB83.gdb"
+# merge_sensitive_gdb  = "2017_Sensitive_Merged_CAALB83.gdb"
+
+    merge_gdb_wkspace = newPath = "\\" + merge_gdb + "\\"
+
+# merge_thr_gdb_wkspace = newpath_threatened + "\\" + merge_threatened_gdb + "\\"
+# merge_end_gdb_wkspace = newpath_endangered + "\\" + merge_endangered_gdb + "\\"
+# merge_sen_gdb_wkspace = newpath_sensitive + "\\" + merge_sensitive_gdb + "\\"
+
+    if arcpy.Exists(merge_gdb_wkspace):
+        arcpy.AddMessage(tes + " GDB exists")
+    else:
+        arcpy.AddMessage("Creating Geodatabase for " + tes + " Data Deliverables containing merged data")
+        arcpy.CreateFileGDB_management(newPath, merge_gdb)
+
+# if arcpy.Exists(merge_sen_gdb_wkspace):
+#     arcpy.AddMessage("Sensitive GDB exists")
+# else:
+#     arcpy.AddMessage("Creating Geodatabase for Sensitive Data Deliverables containing merged data")
+#     arcpy.CreateFileGDB_management(newpath_sensitive, merge_sensitive_gdb)
+#
+# if arcpy.Exists(merge_end_gdb_wkspace):
+#     arcpy.AddMessage("Endangered GDB exists")
+# else:
+#     arcpy.AddMessage("Creating Geodatabase for Endangered Data Deliverables containing merged data")
+#     arcpy.CreateFileGDB_management(newpath_endangered, merge_endangered_gdb)
+#
+# if arcpy.Exists(merge_thr_gdb_wkspace):
+#     arcpy.AddMessage("Threatened GDB exists")
+# else:
+#     arcpy.AddMessage("Creating Geodatabase for Threatened Data Deliverables containing merged data")
+#     arcpy.CreateFileGDB_management(newpath_threatened, merge_threatened_gdb)
 
 
 final_r05_nodist_gdb = "2017_S_R05_FireRetardantEIS_CAALB83_NoDistribution_FWS.gdb"

@@ -29,6 +29,10 @@ now = datetime.datetime.today()
 curYear = str(now.year)
 arcpy.AddMessage("Year is " + curYear)
 
+sciNameField = ""
+commonNameField = ""
+sourceField = ""
+
 tesvariablelist = ["Endangered", "Threatened", "Sensitive"]
 
 for tes in tesvariablelist:
@@ -152,7 +156,13 @@ csvFile = sys.argv[3]
 
 arcpy.AddMessage("csv File: " + csvFile)
 
-with open(csvFile, 'rb') as f:
+# uncomment when using arcgis 10.3
+# with open(csvFile, 'rb') as f:
+#     reader = csv.reader(f)
+#     selectionList = list(reader)
+
+# use when using arcgis pro
+with open(csvFile) as f:
     reader = csv.reader(f)
     selectionList = list(reader)
 
@@ -163,7 +173,7 @@ for item in selectionList:
 if layerType == "TESP":
     sciNameField = "SCIENTIFIC_NAME"
     commonNameField = "ACCEPTED_COMMON_NAME"
-    sourceField = "EDW TESp OccurrencesALL_FoundPlant pulled 2/2017"
+    sourceField = "EDW TESP OccurrencesALL_FoundPlant pulled 2/2017"
 elif layerType == "Wildlife_Sites":
     sciNameField = "SCI_NAME"
     commonNameField = "COMMON_NAME"
@@ -208,7 +218,7 @@ if layerType == "CNDDB":
 elif layerType == "Wildlife_Sites":
     selectQuery += " AND (ASSOC_OBS > 0) AND (SITE_NAME NOT LIKE '%Study%') "
 elif layerType == "Wildlife_Observations":
-    selectQuery += " AND (TOTAL_DETECTED <> 0)"
+    selectQuery += " AND (TOTAL_DETECTED > 0 OR TOTAL_DETECTED IS NULL )"
 elif layerType == "Critical_Habitat_Lines":
     selectQuery += " OR sciname = 'Oncorhynchus (=Salmo) mykiss' OR sciname = 'Catostomus microps'"
 elif layerType == "TESP":

@@ -19,7 +19,7 @@ local_data = local_gdb + "\\Explode"
 
 # layerType = "Condor_Hacking"
 
-# layerType = "NOAA_ESU"
+# layerType = "TESP"
 
 layerType = sys.argv[2]
 
@@ -43,12 +43,10 @@ else:
 
 arcpy.env.overwriteOutput = True
 
-
-# intable = r"C:\Users\jklaus\Documents\Python_Testing\fire_retardant\2017_EDW_CAALB83.gdb\EDW_TESP_2017_OccurrenceAll_FoundPlants_newH_"
-
+# The following is used for testing locally. DELETE when done testing.
 # outFeatClass = in_workspace + "\\" + layerType + "\\Critical_Habitat_Polygons_Test_2017_CAALB83_newproj.gdb\Critical_Habitat_Polygons_2017_Occurrence_found_newE_singlepart"
 
-# outFeatClass = in_workspace + "\\" + layerType + "\\TESP_Test_2017_CAALB83_newproj.gdb\\TESP_2017_Occurrence_found_newE_singlepart_buffer_spart"
+# outFeatClass = in_workspace + "\\" + "Output" + "\\" + layerType + "\\TESP_Test_2017_CAALB83_newproj.gdb\\TESP_2017_original_buffered_single"
 
 # outFeatClass = in_workspace + "\\" + layerType + "\\Wildlife_Sites_Test_2017_CAALB83_newproj.gdb\\Wildlife_Sites_2017_Occurrence_found_newE_singlepart_buffer_spart"
 
@@ -68,23 +66,11 @@ for tes in tesvariablelist:
 
     newPath = in_workspace + "2017_" + tes
 
-# newpath_threatened = in_workspace + "2017_Threatened"
-# newpath_endangered = in_workspace + "2017_Endangered"
-# newpath_sensitive  = in_workspace + "2017_Sensitive"
-
-# Geodatabases for final merge
+    # Geodatabases for final merge
     identInterGdb = "2017_" + tes + "_IdentInter_CAALB83.gdb"
 
-# threatened_gdb = "2017_Threatened_IdentInter_CAALB83.gdb"
-# endangered_gdb = "2017_Endangered_IdentInter_CAALB83.gdb"
-# sensitive_gdb  = "2017_Sensitive_IdentInter_CAALB83.gdb"
-
-# Geodatabases for FWS Deliverable
+    # Geodatabases for FWS Deliverable
     fraDeliverableGdb = "2017_FRA_" + tes + "_OriginalDataBufferedAndNonBufferedAreas_CAALB83.gdb"
-
-# fra_threatened_gdb = "2017_FRA_Threatened_OriginalDataBufferedAndNonBufferedAreas_CAALB83.gdb"
-# fra_endangered_gdb = "2017_FRA_Endangered_OriginalDataBufferedAndNonBufferedAreas_CAALB83.gdb"
-# fra_sensitive_gdb  = "2017_FRA_Sensitive_OriginalDataBufferedAndNonBufferedAreas_CAALB83.gdb"
 
     if arcpy.Exists( newPath + "\\" + identInterGdb):
         arcpy.AddMessage(tes + " GDB exists")
@@ -93,123 +79,68 @@ for tes in tesvariablelist:
         arcpy.CreateFileGDB_management(newPath, identInterGdb)
         arcpy.CreateFileGDB_management(newPath, fraDeliverableGdb)
 
-# if arcpy.Exists(newpath_sensitive + "\\" + sensitive_gdb):
-#     arcpy.AddMessage("Sensitive GDB exists")
-# else:
-#     arcpy.AddMessage("Creating Geodatabase for Sensitive Data Deliverables containing intersection data ....")
-#     arcpy.CreateFileGDB_management(newpath_sensitive, sensitive_gdb)
-#     arcpy.CreateFileGDB_management(newpath_sensitive, fra_sensitive_gdb)
-#
-# if arcpy.Exists(newpath_endangered + "\\" + endangered_gdb):
-#     arcpy.AddMessage("Endangered GDB exists")
-# else:
-#     arcpy.AddMessage("Creating Geodatabase for Endangered Data Deliverables containing intersection data ....")
-#     arcpy.CreateFileGDB_management(newpath_endangered, endangered_gdb)
-#     arcpy.CreateFileGDB_management(newpath_endangered, fra_endangered_gdb)
-#
-# if arcpy.Exists(newpath_threatened + "\\" + threatened_gdb):
-#         arcpy.AddMessage("Threatened GDB exists")
-# else:
-#     arcpy.AddMessage("Creating Geodatabase for Threatened Data Deliverables containing intersection data ....")
-#     arcpy.CreateFileGDB_management(newpath_threatened, threatened_gdb)
-#     arcpy.CreateFileGDB_management(newpath_threatened, fra_threatened_gdb)
+
+def get_filename(tes_rank, orig_filename):
+
+    filename = ""
+    if layerType == "TESP":
+        filename = "EDW_TESP_2017_OccurrenceAll_FoundPlants_ident_" + tes_rank
+    elif layerType == "Wildlife_Sites":
+        filename = "EDW_WildlifeSites_2017_ident_" + tes_rank
+    elif layerType == "Wildlife_Observations":
+        filename = "EDW_FishWildlife_Observation_2017_" + tes_rank[:1] + "_ident"
+    elif layerType == "Critical_Habitat_Polygons":
+        filename = "CHabPolyAllSelectedSpecies_2017_nobuf_Ident_" + tes_rank
+    elif layerType == "Critical_Habitat_Lines":
+        filename = "CHabLineAllSelectedSpecies_2017_nobuf_Ident_" + tes_rank
+    elif layerType == "CNDDB":
+        filename = "CNDDB_2017_All_selectsAndShastaCrayfish_Ident_noBDF_" + tes_rank
+    elif layerType == "Condor_Hacking":
+        filename = "CNH_2017_ident"
+    elif layerType == "Condor_Nest":
+        filename = "CN_2017_ident"
+    elif layerType == "Local" or layerType == "NOAA_ESU":
+        filename = orig_filename
+
+    return filename
 
 
-def copy_to_final_gdb(filename, dissolvedfc):
+def copy_to_gdb(stage, filename):
 
-    tesvariablelist = ["Endangered", "Threatened", "Sensitive"]
-
-    for tes in tesvariablelist:
+    for tes_rank in tesvariablelist:
         arcpy.AddMessage(" --------------------------------------------------------------- ")
 
-        arcpy.MakeFeatureLayer_management(dissolvedfc, "tmplyr")
+        arcpy.MakeFeatureLayer_management(filename, "tmplyr")
 
-        arcpy.AddMessage("Selecting records based on " + tes + " rank ....")
-        arcpy.SelectLayerByAttribute_management("tmplyr", "NEW_SELECTION", "GRANK_FIRE = '" + tes + "'")
+        arcpy.AddMessage("Selecting records based on " + tes_rank + " rank ....")
+        arcpy.SelectLayerByAttribute_management("tmplyr", "NEW_SELECTION", "GRANK_FIRE = '" + tes_rank + "'")
 
-        finallocation = in_workspace + "2017_" + tes + "\\2017_" + tes + "_IdentInter_CAALB83.gdb\\"
-
-        if layerType == "TESP":
-            outputname = "EDW_TESP_2017_" + tes + "_OccurrenceAll_FoundPlants_nobuf"
-        elif layerType == "Wildlife_Sites":
-            outputname = "EDW_WildlifeSites_2017_" + tes + "_nobuf"
-        elif layerType == "Wildlife_Observations":
-            outputname = "EDW_FishWildlife_Observation_2017_" + tes + "_nobuf"
-        elif layerType == "Critical_Habitat_Polygons":
-            outputname = "CHabPolyAllSelectedSpecies_2017_" + tes + "_nobuf"
-        elif layerType == "Critical_Habitat_Lines":
-            outputname = "CHabLineAllSelectedSpecies_2017_" + tes + "_nobuf"
-        elif layerType == "CNDDB":
-            outputname = "CNDDB_selects_2017_" + tes + "_nobuf"
-        elif layerType == "Condor_Hacking":
-            outputname = "CNH_2017_ident"
-        elif layerType == "Condor_Nest":
-            outputname = "CN_2017_ident"
-        elif layerType == "Local" or layerType == "NOAA_ESU":
-            outputname = filename
-
-        finallocation += outputname
-
-        result = arcpy.GetCount_management("tmplyr")
-        count = int(result.getOutput(0))
-        arcpy.AddMessage("Total Number of Records: " + str(count))
-
-        if count > 0:
-            arcpy.AddMessage("Copying " + layerType + " records to Final Stage " +
-                             tes + " Geodatabase as " + outputname)
-            arcpy.CopyFeatures_management("tmplyr", finallocation)
+        if stage == "Interim":
+            outlocation = in_workspace + "2017_" + tes_rank + "\\" + "2017_FRA_" + \
+                          tes_rank + "_OriginalDataBufferedAndNonBufferedAreas_CAALB83.gdb" + "\\"
         else:
-            arcpy.AddMessage("No records found for rank " + tes)
+            outlocation = in_workspace + "2017_" + tes_rank + "\\2017_" + tes_rank + "_IdentInter_CAALB83.gdb\\"
 
-    arcpy.AddMessage("Complete copying data to final staging GDB")
-    arcpy.AddMessage(" ____________________________________________________________________")
-    return
+        outputfilename = get_filename(tes_rank, filename)
 
-
-def copy_to_interim_gdb(filename):
-
-    tesvariablelist = ["Endangered", "Threatened", "Sensitive"]
-
-    for tes in tesvariablelist:
-        arcpy.AddMessage(" --------------------------------------------------------------- ")
-
-        arcpy.MakeFeatureLayer_management(intersectFeatureClass, "tmplyr")
-
-        arcpy.AddMessage("Selecting records based on " + tes + " rank ....")
-        arcpy.SelectLayerByAttribute_management("tmplyr", "NEW_SELECTION", "GRANK_FIRE = '" + tes + "'")
-
-        outlocation = in_workspace + "2017_" + tes + "\\" + "2017_FRA_" + \
-                      tes + "_OriginalDataBufferedAndNonBufferedAreas_CAALB83.gdb" + "\\"
-
-        if layerType == "TESP":
-            interimoutput = "EDW_TESP_2017_OccurrenceAll_FoundPlants_ident_" + tes
-        elif layerType == "Wildlife_Sites":
-            interimoutput = "EDW_WildlifeSites_2017_ident_" + tes
-        elif layerType == "Wildlife_Observations":
-            interimoutput = "EDW_FishWildlife_Observation_2017_" + tes[:1] + "_ident"
-        elif layerType == "Critical_Habitat_Polygons":
-            interimoutput = "CHabPolyAllSelectedSpecies_2017_nobuf_Ident_" + tes
-        elif layerType == "Critical_Habitat_Lines":
-            interimoutput = "CHabLineAllSelectedSpecies_2017_nobuf_Ident_" + tes
-        elif layerType == "CNDDB":
-            interimoutput = "CNDDB_2017_All_selectsAndShastaCrayfish_Ident_noBDF_" + tes
-        elif layerType == "Local" or layerType == "NOAA_ESU":
-            interimoutput = filename
-
-        outlocation += interimoutput
+        outlocation += outputfilename
 
         result = arcpy.GetCount_management("tmplyr")
         count = int(result.getOutput(0))
         arcpy.AddMessage("Total Number of Records: " + str(count))
 
         if count > 0:
-            arcpy.AddMessage("Copying " + layerType + " records to FWS Deliverable Stage " +
-                             tes + " Geodatabase as " + interimoutput)
+            if stage == "Interim":
+                arcpy.AddMessage("Copying " + layerType + " records to FWS Deliverable Stage " +
+                             tes_rank + " Geodatabase as " + outputfilename)
+            else:
+                arcpy.AddMessage("Copying " + layerType + " records to Final Stage " +
+                             tes_rank + " Geodatabase as " + outputfilename)
             arcpy.CopyFeatures_management("tmplyr", outlocation)
         else:
-            arcpy.AddMessage("No records found for rank " + tes)
+            arcpy.AddMessage("No records found for rank " + tes_rank)
 
-    arcpy.AddMessage("Complete copying data to interim deliverable GDB for Fish and Wildlife")
+    arcpy.AddMessage("Complete copying data to " + stage + " staging GDB")
     arcpy.AddMessage(" ____________________________________________________________________")
     return
 
@@ -256,18 +187,18 @@ def unitid_dissolve(filename):
 
     dissolveFeatureClass = filename + "_dissolved"
 
-    arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
-                              ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
-                               "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"])
+    # arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
+    #                           ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
+    #                            "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"])
 
     # arcpy.Dissolve_management(filename, dissolveFeatureClass,
     #                                 ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
-    #                                  "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"],"","SINGLE_PART")
+    #                                  "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE", "BUFF_DIST"], "", "SINGLE_PART")
 
     # May delete this once I confirm we don't need BUFF_DIST from Stacey
-    # arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
-    #                                 ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
-    #                                  "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE", "BUFF_DIST"])
+    arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
+                                    ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
+                                     "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE", "BUFF_DIST"])
 
     arcpy.AddMessage("Repairing Dissolved Geometry ......")
     arcpy.RepairGeometry_management(filename)
@@ -311,11 +242,11 @@ try:
 
             arcpy.AddMessage("Completed Intersection")
 
-            copy_to_interim_gdb(fc)
+            copy_to_gdb("Interim", fc)
 
             dissolveFC = unitid_dissolve(intersectFeatureClass)
 
-            copy_to_final_gdb(fc, dissolveFC)
+            copy_to_gdb("Final", dissolveFC)
     else:
 
         usfsOwnershipFeatureClass = in_workspace + \
@@ -333,17 +264,18 @@ try:
         arcpy.AddMessage("Completed Intersection")
 
         if layerType != "Condor_Nest" and layerType != "Condor_Hacking":
+            #may need to fix the NOAA layer
             if layerType == "NOAA_ESU":
-                copy_to_interim_gdb(nameOfFile)
+                copy_to_gdb("Interim", nameOfFile)
             else:
-                copy_to_interim_gdb(outFeatClass)
+                copy_to_gdb("Interim", intersectFeatureClass)
 
         dissolveFC = unitid_dissolve(intersectFeatureClass)
 
         if layerType == "NOAA_ESU":
-            copy_to_final_gdb(nameOfFile, dissolveFC)
+            copy_to_gdb("Final", dissolveFC)
         else:
-            copy_to_final_gdb(layerType, dissolveFC)
+            copy_to_gdb("Final", dissolveFC)
 
     arcpy.AddMessage("Completed Script successfully!!")
 
