@@ -23,12 +23,20 @@ arcpy.env.overwriteOutput = True
 # using the now variable to assign year everytime there is a hardcoded 2017
 now = datetime.datetime.today()
 curYear = str(now.year)
+curMonth = now.strftime("%B")
+arcpy.AddMessage("Month is " + curMonth)
 arcpy.AddMessage("Year is " + curYear)
 
-esuSpeciesList = ["CKCAC", "CKCVF", "CKCVS", "CKSAC",
-                  "STCCV", "STNCA", "STSCC", "STSCA", "COSNC"]
+# esuSpeciesList = ["CKCAC", "CKCVF", "CKCVS", "CKSAC",
+#                   "STCCV", "STNCA", "STSCC", "STSCA", "COSNC"]
+
+esuSpeciesList = ["COSNC"]
 
 noaaWorkspace = in_workspace + "\\NOAA_ESU\\"
+hydroClipWorkspace = in_workspace + "\\\NHD2017\\2017_NHDfinal_CAALB83.gdb\\"
+# will need to rename these when done testing
+flowClipFeatClass = hydroClipWorkspace + "NHD_Flowline_2017"
+bodyClipFeatClass = hydroClipWorkspace + "NHDWaterBody_2017"
 
 chinookFolder = noaaWorkspace + "Chinook" + "\\"
 cohoFolder = noaaWorkspace + "Coho" + "\\"
@@ -63,12 +71,15 @@ arcpy.AddMessage("Layer Type: " + layerType)
 try:
 
     for species in esuSpeciesList:
-        # if species.startswith("CK"):
-        #     arcpy.CopyFeatures_management(chinookFolder + species + ".shp", layerWorkSpace + species + ".shp")
-        # elif species.startswith("ST"):
-        #     arcpy.CopyFeatures_management(steelFolder + species + ".shp", layerWorkSpace + species + ".shp")
-        # elif species.startswith("CO"):
-        #     arcpy.CopyFeatures_management(cohoFolder + species + ".shp", layerWorkSpace + species + ".shp")
+        arcpy.AddMessage("Processing: " + species)
+        # need to fix how the original shapefiles arrive in output directory
+
+        if species.startswith("CK"):
+            arcpy.CopyFeatures_management(chinookFolder + species + ".shp", layerWorkSpace + species + ".shp")
+        elif species.startswith("ST"):
+            arcpy.CopyFeatures_management(steelFolder + species + ".shp", layerWorkSpace + species + ".shp")
+        elif species.startswith("CO"):
+            arcpy.CopyFeatures_management(cohoFolder + species + ".shp", layerWorkSpace + species + ".shp")
         inProjShapefile = layerWorkSpace + species + ".shp"
         outProjShapefile = layerWorkSpace + species + "_proj.shp"
 
@@ -92,7 +103,7 @@ try:
 
         arcpy.MakeFeatureLayer_management(inSelectFC, "lyr")
 
-        arcpy.AddMessage("Selecting records based on selection ..")
+        arcpy.AddMessage("Selecting records based on selection where [Class = 'Accessible'] ")
         arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION", selectQuery)
 
         arcpy.AddMessage("Copying selected records to new feature ......")
@@ -128,19 +139,45 @@ try:
         cur = arcpy.UpdateCursor(selectFC)
 
         for row in cur:
-            fCodefield = row.getValue("FCode")
-            fTypefield = row.getValue("FType")
-
             row.SOURCEFIRE = "NHD Subbasins " + curMonth + " " + curYear + " within ESU"
             # Need to fix the following - possibly use a dictionary
             row.SNAME_FIRE = species
             row.CNAME_FIRE = species
+            row.CMNT_FIRE = "NHD Flowlines and Waterbodies used within accessible ESU"
             row.BUFFT_FIRE = "300"
             row.BUFFM_FIRE = 91.44
 
             cur.updateRow(row)
 
         del cur
+
+        arcpy.AddMessage("Clipping to Flowline data")
+        outFlowClipFC = selectFC + "_Flowline"
+        arcpy.Clip_analysis(selectFC, flowClipFeatClass, outFlowClipFC)
+
+        arcpy.AddMessage("Clipping to Waterbody data")
+        outBodyClipFC = selectFC + "_Waterbody"
+        arcpy.Clip_analysis(selectFC, bodyClipFeatClass, outBodyClipFC)
+
+        arcpy.AddMessage("Merging both clipped Feature classes")
+        mergeFC = selectFC + "_AllHydro"
+        arcpy.Merge_management([outFlowClipFC, outBodyClipFC], mergeFC)
+
+        singlePartFeatureClass = mergeFC + "_singlepart"
+
+        arcpy.AddMessage("Converting multipart geometry to singlepart ")
+
+        arcpy.MultipartToSinglepart_management(mergeFC, singlePartFeatureClass)
+
+        inCount = int(arcpy.GetCount_management(mergeFC).getOutput(0))
+        outCount = int(arcpy.GetCount_management(singlePartFeatureClass).getOutput(0))
+
+        arcpy.AddMessage("Number of new records: " + str(outCount - inCount))
+
+        arcpy.AddMessage("Repairing Geometry ......")
+        arcpy.RepairGeometry_management(singlePartFeatureClass)
+        arcpy.AddMessage("Finished with Explode and Repair")
+
 
 except arcpy.ExecuteError:
     arcpy.AddError(arcpy.GetMessages(2))
