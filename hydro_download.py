@@ -2,7 +2,7 @@
 #
 # Description: Selects out, clips, and buffers hydrology layers for Flowlines,
 #              Area, and Waterbody.
-# Created by: Josh Klaus 08/24/2017
+# Created by: Josh Klaus 08/24/2017 jklaus@fs.fed.us
 # ---------------------------------------------------------------------------
 
 # Import arcpy module
@@ -18,6 +18,11 @@ import zipfile
 in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
 # in_workspace = sys.argv[1]
 
+#Still Need to figure out how to pull SDE layers:
+dataTESP = r"T:\FS\Reference\GeoTool\agency\DatabaseConnection\edw_sde_default_as_myself.sde\S_USA.TESP\S_USA.TESP_OccurrenceAll"
+
+dataFW = r"T:\FS\Reference\GeoTool\agency\DatabaseConnection\edw_sde_default_as_myself.sde\S_USA.Fish_and_Wildlife"
+
 arcpy.env.workspace = in_workspace
 arcpy.env.overwriteOutput = True
 
@@ -27,46 +32,74 @@ subRegionList = ["1503", "1604", "1605", "1606", "1710", "1801",
 
 salmonList = ["chinook", "coho", "steelhead"]
 
+downloadFolders = ["NOAA_ESU", "Hydro", "CHab"]
+
+downloadPath = in_workspace + "\\" + "Downloads"
+if not os.path.exists(downloadPath):
+    arcpy.AddMessage("Creating directory for Downloads")
+    os.makedirs(downloadPath)
+
+for folder in downloadFolders:
+
+    if not os.path.exists(downloadPath + "\\" + folder):
+        arcpy.AddMessage("Creating download directory for " + folder)
+        os.makedirs(downloadPath + "\\" + folder)
+
 try:
     for region in subRegionList:
 
         filename = "NHD_H_" + region + "_GDB.zip"
 
-        downloadPath = r"C:\Users\jklaus\Documents\Python_Testing\fire_retardant\Downloads\Hydro"
+        hydroDownloadPath = downloadPath + "\\" + "Hydro"
 
-        downloadFile = os.path.join(downloadPath, filename)
+        downloadFile = os.path.join(hydroDownloadPath, filename)
 
         url = "ftp://rockyftp.cr.usgs.gov/vdelivery/Datasets/Staged/Hydrography/NHD/HU4/HighResolution/GDB/" + filename
 
-        arcpy.AddMessage("Downloading " + filename + " to " + downloadPath)
+        arcpy.AddMessage("Downloading " + filename + " to " + hydroDownloadPath)
 
         urllib.urlretrieve(url, downloadFile)
+
+        arcpy.AddMessage("Unzipping " + filename)
+        zip_ref = zipfile.ZipFile(downloadFile, 'r')
+        zip_ref.extractall(hydroDownloadPath)
+        zip_ref.close()
 
     for salmon in salmonList:
 
         filename = salmon + "_salmon.zip"
 
-        downloadPath = r"C:\Users\jklaus\Documents\Python_Testing\fire_retardant\Downloads\NOAA_ESU"
+        noaaDownloadPath = downloadPath + "\\" + "NOAA_ESU"
 
-        downloadFile = os.path.join(downloadPath, filename)
+        downloadFile = os.path.join(noaaDownloadPath, filename)
 
         url = "http://www.westcoast.fisheries.noaa.gov/publications/gis_maps/gis_data/salmon_steelhead/esu/" + filename
 
-        arcpy.AddMessage("Downloading " + filename + " to " + downloadPath)
+        arcpy.AddMessage("Downloading " + filename + " to " + noaaDownloadPath)
 
         urllib.urlretrieve(url, downloadFile)
 
+        arcpy.AddMessage("Unzipping " + filename)
+        zip_ref = zipfile.ZipFile(downloadFile, 'r')
+        zip_ref.extractall(noaaDownloadPath)
+        zip_ref.close()
+
     filename = "crithab_all_layers.zip"
 
-    downloadPath = r"C:\Users\jklaus\Documents\Python_Testing\fire_retardant\Downloads\NOAA_ESU"
+    chabDownloadPath = downloadPath + "\\" + "CHab"
 
-    downloadFile = os.path.join(downloadPath, filename)
+    downloadFile = os.path.join(chabDownloadPath, filename)
 
     url = "https://ecos.fws.gov/docs/crithab/crithab_all/" + filename
 
-    arcpy.AddMessage("Downloading " + filename + " to " + downloadPath)
+    arcpy.AddMessage("Downloading " + filename + " to " + chabDownloadPath)
 
     urllib.urlretrieve(url, downloadFile)
+
+    arcpy.AddMessage("Unzipping " + filename)
+    zip_ref = zipfile.ZipFile(downloadFile, 'r')
+    zip_ref.extractall(chabDownloadPath)
+    zip_ref.close()
 
 
 except arcpy.ExecuteError:

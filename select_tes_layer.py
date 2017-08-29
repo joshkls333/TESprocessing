@@ -13,8 +13,8 @@ import os
 import datetime
 
 # Set workspace or obtain from user input
-# in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
-in_workspace = sys.argv[1]
+in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
+# in_workspace = sys.argv[1]
 
 arcpy.env.workspace = in_workspace
 arcpy.env.overwriteOutput = True
@@ -49,13 +49,11 @@ for tes in tesvariablelist:
 #  Please note the following selections of inTable and csv are file dependent
 # --------------------------------------------------------------------------------
 
-inTable = sys.argv[2]
-
 layerType = sys.argv[4]
 
 # layerType = "CNDDB"
 
-outputDir = in_workspace + "\\Output"
+outputDir = in_workspace + "\\" + "Output"
 if not os.path.exists(outputDir):
     arcpy.AddMessage("Creating directory for Output")
     os.makedirs(outputDir)
@@ -72,21 +70,23 @@ arcpy.AddMessage("Layer Type: " + layerType)
 
 #-------------------------------------------------------------------------------------------
 # the below is hardcoded values used for testing and debugging
-# inTable = in_workspace
+inTable = in_workspace
+
+# inTable = sys.argv[2]
 
 # if inTable == "#":
-# if layerType == "TESP":
-#     inTable += "\\TESP\\EDW_TESP_r05_021617_Everything.gdb\\TESP\\TESP_OccurrenceAll"
-# elif layerType == "Wildlife_Sites":
-#     inTable += "\\Wildlife\\EDW_FishWildlife_R05_021617_Everything.gdb\\Fish_and_Wildlife\\WildlifeSites"
-# elif layerType == "Wildlife_Observations":
-#     inTable += "\\Wildlife\\EDW_FishWildlife_R05_021617_Everything.gdb\\Fish_and_Wildlife\\FishWildlife_Observation"
-# elif layerType == "Critical_Habitat_Lines":
-#     inTable += "\\CHab\\crithab_all_layers\\CRITHAB_LINE.shp"
-# elif layerType == "Critical_Habitat_Polygons":
-#     inTable += "\\CHab\\crithab_all_layers\\CRITHAB_POLY.shp"
-# elif layerType == "CNDDB":
-#     inTable += "\\CNDDB\\gis_gov\\cnddb.shp"
+if layerType == "TESP":
+    inTable += "\\USFS_EDW\\EDW_TESP_r05_021617_Everything.gdb\\TESP\\TESP_OccurrenceAll"
+elif layerType == "Wildlife_Sites":
+    inTable += "\\USFS_EDW\\EDW_FishWildlife_R05_021617_Everything.gdb\\Fish_and_Wildlife\\WildlifeSites"
+elif layerType == "Wildlife_Observations":
+    inTable += "\\USFS_EDW\\EDW_FishWildlife_R05_021617_Everything.gdb\\Fish_and_Wildlife\\FishWildlife_Observation"
+elif layerType == "Critical_Habitat_Lines":
+    inTable += "\\CHab\\crithab_all_layers\\CRITHAB_LINE.shp"
+elif layerType == "Critical_Habitat_Polygons":
+    inTable += "\\CHab\\crithab_all_layers\\CRITHAB_POLY.shp"
+elif layerType == "CNDDB":
+    inTable += "\\CNDDB\\gis_gov\\cnddb.shp"
 
 #------------------------------------------------------------------------------
 # Testing to see if data is projected in NAD 1983 California Teale Albers
@@ -137,34 +137,34 @@ if layerType == "CNDDB":
 # Note the different ways of bringing in a csv for lookup data on the buffer amount, forest, and status
 # _____________________________________________________________________________________________________
 
-csvFile = sys.argv[3]
+# csvFile = sys.argv[3]
 
-# csvFile = in_workspace + "\\csv_tables"
-#
-# if layerType == "TESP":
-#     csvFile += "\\TESP_SummaryTable.csv"
-# elif layerType == "Wildlife_Sites":
-#     csvFile += "\\Wildlife_Sites_SummaryTable.csv"
-# elif layerType == "Wildlife_Observations":
-#     csvFile += "\\Wildlife_Observations_SummaryTable.csv"
-# elif layerType == "Critical_Habitat_Polygons":
-#     csvFile += "\\crithab.csv"
-# elif layerType == "Critical_Habitat_Lines":
-#     csvFile += "\\crithab.csv"
-# elif layerType == "CNDDB":
-#     csvFile += "\\CNDDB_SummaryTable.csv"
+csvFile = in_workspace + "\\csv_tables"
+
+if layerType == "TESP":
+    csvFile += "\\TESP_SummaryTable.csv"
+elif layerType == "Wildlife_Sites":
+    csvFile += "\\Wildlife_Sites_SummaryTable.csv"
+elif layerType == "Wildlife_Observations":
+    csvFile += "\\Wildlife_Observations_SummaryTable.csv"
+elif layerType == "Critical_Habitat_Polygons":
+    csvFile += "\\crithab.csv"
+elif layerType == "Critical_Habitat_Lines":
+    csvFile += "\\crithab.csv"
+elif layerType == "CNDDB":
+    csvFile += "\\CNDDB_SummaryTable.csv"
 
 arcpy.AddMessage("csv File: " + csvFile)
 
 # uncomment when using arcgis 10.3
-# with open(csvFile, 'rb') as f:
-#     reader = csv.reader(f)
-#     selectionList = list(reader)
-
-# use when using arcgis pro
-with open(csvFile) as f:
+with open(csvFile, 'rb') as f:
     reader = csv.reader(f)
     selectionList = list(reader)
+
+# use when using arcgis pro
+# with open(csvFile) as f:
+#     reader = csv.reader(f)
+#     selectionList = list(reader)
 
 arcpy.AddMessage("Listing of csv table data: ")
 for item in selectionList:

@@ -3,7 +3,7 @@
 # Description: Creates the final deliverable product for the WO.
 #              This includes generating geodatabases for each forest
 #              that contains only the status and unitID information
-# Created by: Josh Klaus 08/17/2017
+# Created by: Josh Klaus 08/24/2017 jklaus@fs.fed.us
 # ---------------------------------------------------------------------------
 
 # Import arcpy module

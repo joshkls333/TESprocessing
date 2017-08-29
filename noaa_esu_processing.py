@@ -27,13 +27,13 @@ curMonth = now.strftime("%B")
 arcpy.AddMessage("Month is " + curMonth)
 arcpy.AddMessage("Year is " + curYear)
 
-# esuSpeciesList = ["CKCAC", "CKCVF", "CKCVS", "CKSAC",
-#                   "STCCV", "STNCA", "STSCC", "STSCA", "COSNC"]
+esuSpeciesList = ["CKCAC", "CKCVF", "CKCVS", "CKSAC",
+                  "STCCV", "STNCA", "STSCC", "STSCA", "COSNC"]
 
-esuSpeciesList = ["COSNC"]
+# esuSpeciesList = ["COSNC"]
 
 noaaWorkspace = in_workspace + "\\NOAA_ESU\\"
-hydroClipWorkspace = in_workspace + "\\\NHD2017\\2017_NHDfinal_CAALB83.gdb\\"
+hydroClipWorkspace = in_workspace + "\\NHD2017\\2017_NHDfinal_CAALB83.gdb\\"
 # will need to rename these when done testing
 flowClipFeatClass = hydroClipWorkspace + "NHD_Flowline_2017"
 bodyClipFeatClass = hydroClipWorkspace + "NHDWaterBody_2017"
@@ -48,7 +48,7 @@ sr = arcpy.SpatialReference(3310)
 
 layerType = "NOAA_ESU"
 
-outputDir = in_workspace + "\\Output"
+outputDir = in_workspace + "\\" + "Output"
 if not os.path.exists(outputDir):
     arcpy.AddMessage("Creating directory for Output")
     os.makedirs(outputDir)
@@ -73,7 +73,6 @@ try:
     for species in esuSpeciesList:
         arcpy.AddMessage("Processing: " + species)
         # need to fix how the original shapefiles arrive in output directory
-
         if species.startswith("CK"):
             arcpy.CopyFeatures_management(chinookFolder + species + ".shp", layerWorkSpace + species + ".shp")
         elif species.startswith("ST"):

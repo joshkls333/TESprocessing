@@ -3,7 +3,7 @@
 # Usage: PairwiseIntersect_analysis
 # Description: Performs an Intersect_analysis with pairwise processing that only
 #              runs in ArcGIS Pro. After I drop unnecessary fields and perform a repair geometry.
-# Created by: Josh Klaus 08/01/2017
+# Created by: Josh Klaus 08/01/2017 jklaus@fs.fed.us
 # ---------------------------------------------------------------------------
 
 # Import arcpy module
@@ -19,7 +19,7 @@ local_data = local_gdb + "\\Explode"
 
 # layerType = "Condor_Hacking"
 
-# layerType = "TESP"
+# layerType = "Local"
 
 layerType = sys.argv[2]
 
@@ -50,10 +50,10 @@ arcpy.env.overwriteOutput = True
 
 # outFeatClass = in_workspace + "\\" + layerType + "\\Wildlife_Sites_Test_2017_CAALB83_newproj.gdb\\Wildlife_Sites_2017_Occurrence_found_newE_singlepart_buffer_spart"
 
-# outFeatClass = in_workspace + "\\CondorData_noFOIAnoRelease\\2017_Condor_CAALB83.gdb\\CondorHacking_2015"
+outFeatClass = in_workspace + "\\CondorData_noFOIAnoRelease\\2017_Condor_CAALB83.gdb\\CondorHacking_2015"
 
 
-outFeatClass = sys.argv[1]
+# outFeatClass = sys.argv[1]
 
 nameOfFile = outFeatClass
 
@@ -100,7 +100,7 @@ def get_filename(tes_rank, orig_filename):
     elif layerType == "Condor_Nest":
         filename = "CN_2017_ident"
     elif layerType == "Local" or layerType == "NOAA_ESU":
-        filename = orig_filename
+        filename = fc
 
     return filename
 
@@ -172,13 +172,14 @@ def unitid_dissolve(filename):
 
     if layerType == "CNDDB":
         arcpy.AddMessage("Total records deleted because they were Plants from San Bernardino : " + str(plant0512num))
+        copy_to_gdb("Interim", filename)
 
-    if layerType == "CNDDB":
-        with arcpy.da.UpdateCursor(intersectFeatureClass, ["Type", "UnitID"]) as cursor:
-            for row in cursor:
-                if row[0] == "PLANT" and row[1] == "0512":
-                    cursor.deleteRow()
-                    arcpy.AddMessage("Deleted row")
+    # if layerType == "CNDDB":
+    #     with arcpy.da.UpdateCursor(intersectFeatureClass, ["Type", "UnitID"]) as cursor:
+    #         for row in cursor:
+    #             if row[0] == "PLANT" and row[1] == "0512":
+    #                 cursor.deleteRow()
+    #                 arcpy.AddMessage("Deleted row")
 
     arcpy.AddMessage("Repairing Geometry ......")
     arcpy.RepairGeometry_management(filename)
@@ -187,18 +188,18 @@ def unitid_dissolve(filename):
 
     dissolveFeatureClass = filename + "_dissolved"
 
-    # arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
-    #                           ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
-    #                            "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"])
+    arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
+                              ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
+                               "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"])
 
     # arcpy.Dissolve_management(filename, dissolveFeatureClass,
     #                                 ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
-    #                                  "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE", "BUFF_DIST"], "", "SINGLE_PART")
+    #                                  "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"], "", "SINGLE_PART")
 
     # May delete this once I confirm we don't need BUFF_DIST from Stacey
-    arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
-                                    ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
-                                     "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE", "BUFF_DIST"])
+    # arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
+    #                                 ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
+    #                                  "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE", "BUFF_DIST"])
 
     arcpy.AddMessage("Repairing Dissolved Geometry ......")
     arcpy.RepairGeometry_management(filename)
@@ -242,7 +243,7 @@ try:
 
             arcpy.AddMessage("Completed Intersection")
 
-            copy_to_gdb("Interim", fc)
+            copy_to_gdb("Interim", intersectFeatureClass)
 
             dissolveFC = unitid_dissolve(intersectFeatureClass)
 
@@ -263,8 +264,8 @@ try:
 
         arcpy.AddMessage("Completed Intersection")
 
-        if layerType != "Condor_Nest" and layerType != "Condor_Hacking":
-            #may need to fix the NOAA layer
+        if layerType != "CNDDB":
+            # may need to fix the NOAA layer
             if layerType == "NOAA_ESU":
                 copy_to_gdb("Interim", nameOfFile)
             else:
