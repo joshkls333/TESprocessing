@@ -97,9 +97,11 @@ try:
         hydroGDB = "NHD_H_" + region + "_GDB.gdb"
 
         if arcpy.Exists(hydroWorkspace + hydroGDB):
+            arcpy.AddMessage("______________________________________")
             arcpy.AddMessage("Processing " + hydroGDB)
 
             for waterFeature in waterFeatureList:
+                arcpy.AddMessage("--------------------------------------")
                 arcpy.AddMessage("processing " + waterFeature)
 
                 flowlineShapefile = waterFeature + ".shp"
@@ -144,6 +146,7 @@ try:
                 elif waterFeature == nhdAreaFC:
                     selectQuery = "( FCode = 46003 OR FCode = 46006 )"
 
+                arcpy.AddMessage("Selecting featues based on following Select Query: " + selectQuery)
                 arcpy.MakeFeatureLayer_management(inSelectFC, "lyr" )
 
                 arcpy.AddMessage("Selecting records based on selection ..")
@@ -218,13 +221,13 @@ try:
                     elif fCodefield == 39011:
                         row.CMNT_FIRE = "FCode 39011 - LakePond Perennial Date of Photography"
                         row.INST_FIRE = "LakePond Perennial Date of Photography"
-                    elif  fTypefield == 436:
+                    elif fTypefield == 436:
                         row.CMNT_FIRE = "FType 436 - Reservoir"
                         row.INST_FIRE = "Reservoir"
-                    elif  fTypefield == 466:
+                    elif fTypefield == 466:
                         row.CMNT_FIRE = "FType 466 - Swamp Marsh"
                         row.INST_FIRE = "Swamp Marsh"
-                    elif  fTypefield == 493:
+                    elif fTypefield == 493:
                         row.CMNT_FIRE = "FType 493 - Estuary"
                         row.INST_FIRE = "Estuary"
 
@@ -242,20 +245,32 @@ try:
         else:
             arcpy.AddMessage(region + " GDB does not exist may need to download and unzip")
 
-    # arcpy.AddMessage("Merging Flowlines")
-    # arcpy.Merge_management(nhdFlowlineList, outputProjGDB + "\\" +  nhdFlowlineMerge)
-    #
-    # arcpy.AddMessage("Merging Areas")
-    # arcpy.Merge_management(nhdAreaList, outputProjGDB + "\\" + nhdAreaMerge)
-    #
-    # arcpy.AddMessage("Merging Waterbodies")
-    # arcpy.Merge_management(nhdWaterbodyList, outputProjGDB + "\\" + nhdWaterbodyMerge)
+    arcpy.AddMessage("________________________________________________")
+    arcpy.AddMessage("------------------------------------------------")
+    arcpy.AddMessage("________________________________________________")
 
-    # arcpy.AddMessage("Merging Areas and Waterbodies")
-    # arcpy.Merge_management([outputProjGDB + "\\" + nhdAreaMerge, outputProjGDB + "\\" + nhdWaterbodyMerge],
-    #                         outputProjGDB + "\\" + nhdArea_WaterbodyMerge)
+    arcpy.AddMessage("Merging Flowlines")
+    arcpy.Merge_management(nhdFlowlineList, outputProjGDB + "\\" + nhdFlowlineMerge)
+
+    arcpy.AddMessage("Merging Areas")
+    arcpy.Merge_management(nhdAreaList, outputProjGDB + "\\" + nhdAreaMerge)
+
+    arcpy.AddMessage("Merging Waterbodies")
+    arcpy.Merge_management(nhdWaterbodyList, outputProjGDB + "\\" + nhdWaterbodyMerge)
+
+    arcpy.AddMessage("Merging Areas and Waterbodies")
+    arcpy.Merge_management([outputProjGDB + "\\" + nhdAreaMerge, outputProjGDB + "\\" + nhdWaterbodyMerge],
+                            outputProjGDB + "\\" + nhdArea_WaterbodyMerge)
+
+    arcpy.AddMessage("__________________________________________________")
+    arcpy.AddMessage("--------------------------------------------------")
+    arcpy.AddMessage("__________________________________________________")
 
     for item in mergeList:
+        arcpy.AddMessage("|------------------------------------------------|")
+        arcpy.AddMessage("|------------------------------------------------|")
+        arcpy.AddMessage("__________________________________________________")
+
         arcpy.AddMessage("Buffering " + item + " features ....")
         bufferInput = outputProjGDB + "\\" + item
         bufferOutput = outputProjGDB + "\\" + item + "_Buff"

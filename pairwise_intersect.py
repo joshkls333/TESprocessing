@@ -21,6 +21,8 @@ local_data = local_gdb + "\\Explode"
 
 # layerType = "Local"
 
+# layerType = "NOAA_ESU"
+
 layerType = sys.argv[2]
 
 # nameOfFile = sys.argv[3]
@@ -211,8 +213,8 @@ def unitid_dissolve(filename):
 
 try:
 
-    if layerType == "Local":
-    # if layerType == "Local" or layerType == "NOAA_ESU":
+    # if layerType == "Local":
+    if layerType == "Local" or layerType == "NOAA_ESU":
         fcList = arcpy.ListFeatureClasses()
 
         for fc in fcList:
@@ -237,9 +239,10 @@ try:
             else:
                 intersectFeatureClass = noaaGdb + "\\" + intersectFeature
 
-            arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
-
-            # arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
+            if layerType == "Local":
+                arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
+            else:
+                arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
 
             arcpy.AddMessage("Completed Intersection")
 
@@ -258,9 +261,9 @@ try:
         arcpy.AddMessage("Intersecting with USFS Ownership feature class .....")
         arcpy.AddMessage("Please be patient while this runs .....")
 
-        # arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
+        arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
 
-        arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
+        # arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
 
         arcpy.AddMessage("Completed Intersection")
 
