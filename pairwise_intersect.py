@@ -1,8 +1,29 @@
+# ---------------------------------------------------------------------------
 # pairwise_intersect.py
 #
 # Usage: PairwiseIntersect_analysis
 # Description: Performs an Intersect_analysis with pairwise processing that only
-#              runs in ArcGIS Pro. After I drop unnecessary fields and perform a repair geometry.
+#              runs in ArcGIS Pro. After the intersection data is exported to FWS GDB.
+#              UnitID field is populated based on intersection and a Dissolve is performed
+#              to dissolve data and remove extraneous fields. Data is exported to Final
+#              GDB.
+#              Note: User selects final file from preprocessing for all datasets except Local
+#                     and NOAA. Those two datasets will generate a list of feature classes and
+#                     loop through them running intersection and export processes.
+#
+# Runtime Estimates: NOAA       : 29 min 52 sec
+#                    Local      : 16 min 20 sec
+#                    TESP       :  1 min  2 sec
+#                    Wild Sites :        33 sec
+#                    Wild Obs E :  2 min 16 sec
+#                    Wild Obs T :  1 min  4 sec
+#                    Wild obs S :        22 sec
+#                    CHab Poly  :        26 sec
+#                    Chab Line  :        11 sec
+#                    CNDDB      :        48 sec
+#                    Cond Nest  :        18 sec
+#                    Cond Hack  :        16 sec
+#
 # Created by: Josh Klaus 08/01/2017 jklaus@fs.fed.us
 # ---------------------------------------------------------------------------
 
@@ -52,10 +73,10 @@ arcpy.env.overwriteOutput = True
 
 # outFeatClass = in_workspace + "\\" + layerType + "\\Wildlife_Sites_Test_2017_CAALB83_newproj.gdb\\Wildlife_Sites_2017_Occurrence_found_newE_singlepart_buffer_spart"
 
-outFeatClass = in_workspace + "\\CondorData_noFOIAnoRelease\\2017_Condor_CAALB83.gdb\\CondorHacking_2015"
+# outFeatClass = in_workspace + "\\CondorData_noFOIAnoRelease\\2017_Condor_CAALB83.gdb\\CondorHacking_2015"
 
 
-# outFeatClass = sys.argv[1]
+outFeatClass = sys.argv[1]
 
 nameOfFile = outFeatClass
 
@@ -172,6 +193,7 @@ def unitid_dissolve(filename):
 
     del cur
 
+    # running export to gdb just for CNDDB dataset others were ran prior to this function
     if layerType == "CNDDB":
         arcpy.AddMessage("Total records deleted because they were Plants from San Bernardino : " + str(plant0512num))
         copy_to_gdb("Interim", filename)
@@ -261,14 +283,15 @@ try:
         arcpy.AddMessage("Intersecting with USFS Ownership feature class .....")
         arcpy.AddMessage("Please be patient while this runs .....")
 
-        arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
+        # arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
 
-        # arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
+        arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
 
         arcpy.AddMessage("Completed Intersection")
 
+        # CNDDB layer is skipped here because we need to remove BDF plants prior to exporting GDB
         if layerType != "CNDDB":
-            # may need to fix the NOAA layer
+            # may need to fix the NOAA layer - may remove this and just use the above
             if layerType == "NOAA_ESU":
                 copy_to_gdb("Interim", nameOfFile)
             else:
@@ -276,6 +299,7 @@ try:
 
         dissolveFC = unitid_dissolve(intersectFeatureClass)
 
+        # may need to fix the NOAA layer - may remove this and just use the above
         if layerType == "NOAA_ESU":
             copy_to_gdb("Final", dissolveFC)
         else:

@@ -1,7 +1,17 @@
-# noaa_use_processing.py
+# ---------------------------------------------------------------------------
+# noaa_esu_processing.py
 #
-# Description: Used to process all the NOAA ESU layers by clipping to
-#               Hydrology layers to prepare for intersection
+# Description: Runs a loop through all the 5-letter coded species of the ESU list
+#              first performing a copy from NOAA downloaded data and projected into
+#              a GDB as Nad83 CAALB. Selects out only the Accessible class. Adds
+#              custom FRA fields that will be used to dissolve later. Clips the feature
+#              class to NHDFlowline and NHDWaterbody merged feature classes produced
+#              from Hydrology processing. Merges those two feature classes into one
+#              and performs an explode and repair. Next steps will be done with
+#              pairwise_intersection script.
+#
+# Runtime Estimates: 1 hr 25 min 57 sec
+#
 # Created by: Josh Klaus 08/25/2017 jklaus@fs.fed.us
 # ---------------------------------------------------------------------------
 
@@ -32,8 +42,10 @@ esuSpeciesList = ["CKCAC", "CKCVF", "CKCVS", "CKSAC",
 
 # esuSpeciesList = ["COSNC"]
 
+# this workspace may change to output workspace from hydrology_processing.py
 noaaWorkspace = in_workspace + "\\NOAA_ESU\\"
 hydroClipWorkspace = in_workspace + "\\NHD2017\\2017_NHDfinal_CAALB83.gdb\\"
+
 # will need to rename these when done testing
 flowClipFeatClass = hydroClipWorkspace + "NHD_Flowline_2017"
 bodyClipFeatClass = hydroClipWorkspace + "NHDWaterBody_2017"
@@ -154,6 +166,7 @@ try:
         outFlowClipFC = selectFC + "_Flowline"
         arcpy.Clip_analysis(selectFC, flowClipFeatClass, outFlowClipFC)
 
+        # this may need to change to a different feature class - check naming conventions
         arcpy.AddMessage("Clipping to Waterbody data")
         outBodyClipFC = selectFC + "_Waterbody"
         arcpy.Clip_analysis(selectFC, bodyClipFeatClass, outBodyClipFC)
@@ -177,6 +190,8 @@ try:
         arcpy.RepairGeometry_management(singlePartFeatureClass)
         arcpy.AddMessage("Finished with Explode and Repair")
 
+    arcpy.AddMessage("Complete processing of all ESU datasets!")
+    arcpy.AddMessage("Continue with pairwise_intersection.py to finalized processing of NOAA ESU data.")
 
 except arcpy.ExecuteError:
     arcpy.AddError(arcpy.GetMessages(2))

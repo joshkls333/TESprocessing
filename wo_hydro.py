@@ -1,8 +1,11 @@
+# ---------------------------------------------------------------------------
 # wo_hydro.py
 #
 # Description: Creates the final deliverable product for the WO.
 #              This includes generating geodatabases for each forest
-#              that contains only the status and unitID information
+#
+# Runtime Estimates: 2 min 33 sec
+#
 # Created by: Josh Klaus 08/24/2017 jklaus@fs.fed.us
 # ---------------------------------------------------------------------------
 
@@ -21,11 +24,11 @@ arcpy.env.overwriteOutput = True
 
 outputWorkSpace = in_workspace + "\\" + "Output" + "\\"
 
-test_hydro_gdb = "Hydro_Test_2017_CAALB83.gdb"
+test_hydro_gdb = "Hydro_Test_2017_CAALB83_newproj.gdb"
 final_hydro_gdb = "2017_NHDfinal_CAALB83.gdb"
 staging_hydro_gdb = "2017_S_R05_FireRetardantEIS_CAALB83_AllHydroDatasets.gdb"
 
-outputHydro = in_workspace + "\\" + "Output" + "\\" + "Hydro2017" + "\\" + test_hydro_gdb
+outputHydro = outputWorkSpace + "Hydro2017" + "\\" + test_hydro_gdb
 
 wo_folder = in_workspace + "WO"
 
@@ -87,16 +90,16 @@ try:
         arcpy.CreateFileGDB_management(hydro_folder, final_hydro_gdb)
 
     # May take out after testing is complete
-    # arcpy.AddMessage("exporting from test gdb to final gdb")
-    # arcpy.FeatureClassToGeodatabase_conversion(outputHydro +
-    #                                            "\\NHDFlowline_Merge_Buff_intersect_dissolved", final_wksp)
-    # arcpy.FeatureClassToGeodatabase_conversion(outputHydro +
-    #                                            "\\NHDWaterbody_Area_Merge_Buff_intersect_dissolved", final_wksp)
-    # arcpy.AddMessage("renaming files to final staging name")
-    # arcpy.Rename_management(final_wksp + "\\NHDFlowline_Merge_Buff_intersect_dissolved",
-    #                         final_wksp + "\\NHD_Flowline")
-    # arcpy.Rename_management(final_wksp + "\\NHDWaterbody_Area_Merge_Buff_intersect_dissolved",
-    #                         final_wksp + "\\NHD_Waterbody")
+    arcpy.AddMessage("exporting from test gdb to final gdb")
+    arcpy.FeatureClassToGeodatabase_conversion(outputHydro +
+                                               "\\NHDFlowline_Merge_Buff_intersect_dissolved", final_wksp)
+    arcpy.FeatureClassToGeodatabase_conversion(outputHydro +
+                                               "\\NHDWaterbody_Area_Merge_Buff_intersect_dissolved", final_wksp)
+    arcpy.AddMessage("renaming files to final staging name")
+    arcpy.Rename_management(final_wksp + "\\NHDFlowline_Merge_Buff_intersect_dissolved",
+                            final_wksp + "\\NHD_Flowline")
+    arcpy.Rename_management(final_wksp + "\\NHDWaterbody_Area_Merge_Buff_intersect_dissolved",
+                            final_wksp + "\\NHD_Waterbody")
 
     hydroList = ["NHD_Flowline", "NHD_Waterbody"]
 

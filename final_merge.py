@@ -1,8 +1,16 @@
+# ---------------------------------------------------------------------------
 # final_merge.py
 #
-# Usage: Merge_management
 # Description: Completes TES processing by merging all the feature classes from each
-#              geodatabase into one feature class and a final staging geodatabase
+#              geodatabase into one feature class and a final staging geodatabase.
+#              This gdb will contain non-distributable data.
+#              A dissolve runs on the merged feature class to eliminate all fields
+#              except UnitID and GRANK_FIRE and then exported to
+#              final staging database where the WO deliverables and individual
+#              forest geodatabases will be pulled from.
+#
+# Runtime Estimates: 37 min 31 sec
+#
 # Created by: Josh Klaus 08/17/2017 jklaus@fs.fed.us
 # ---------------------------------------------------------------------------
 
@@ -73,6 +81,7 @@ try:
 
         inputs = ""
 
+        arcpy.AddMessage("__________________________________________________________________")
         arcpy.AddMessage("List of features being merged:")
         for fc in fcList:
             inputs += os.path.join(arcpy.env.workspace, fc)
@@ -81,6 +90,7 @@ try:
 
         merge_fc = newpath + "\\" + merge_gdb + "\\" + "FireRetardantEIS_" + tes + "_Merged"
 
+        arcpy.AddMessage("-----------------------------------------------------------------")
         arcpy.AddMessage("Merging " + tes + " feature classes")
 
         arcpy.Merge_management(inputs, merge_fc)
@@ -96,29 +106,33 @@ try:
 
         arcpy.Rename_management(final_no_fc_old, final_no_fc)
 
-        arcpy.AddMessage("Export complete")
+        arcpy.AddMessage("Export to non-distributable GDB complete")
 
         arcpy.AddMessage("Dissolving " + tes + " Features")
 
         dissolveFeatureClass = final_no_fc + "_dissolved"
 
-        # arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,["UnitID", "GRANK_FIRE"])
+        arcpy.PairwiseDissolve_analysis(final_no_fc, dissolveFeatureClass,["UnitID", "GRANK_FIRE"])
 
-        arcpy.Dissolve_management(final_no_fc, dissolveFeatureClass, ["UnitID", "GRANK_FIRE"], "", "SINGLE_PART")
+        # arcpy.Dissolve_management(final_no_fc, dissolveFeatureClass, ["UnitID", "GRANK_FIRE"], "", "SINGLE_PART")
 
         arcpy.AddMessage("Repairing Dissolved Geometry ......")
         arcpy.RepairGeometry_management(dissolveFeatureClass)
         arcpy.AddMessage("Dissolve and Repair complete")
 
-        arcpy.FeatureClassToGeodatabase_conversion(dissolveFeatureClass, final_wksp)
+        arcpy.AddMessage('Exporting dissolved feature class with only UnitID and GRANK_FIRE '
+                         'fields to final distributable Geodatabase')
 
         final_fc_old = final_wksp + "\\" + "FireRetardantEIS_" + tes + "_NoDistribution_dissolved"
-
         final_fc = final_wksp + "\\" + "FireRetardantEIS_" + tes
+
+        arcpy.FeatureClassToGeodatabase_conversion(dissolveFeatureClass, final_wksp)
 
         arcpy.Rename_management(final_fc_old, final_fc)
 
-    arcpy.AddMessage("Export Complete!!")
+        arcpy.AddMessage("Export to final distributable GDB complete")
+
+    arcpy.AddMessage("Merge and Export Complete ready to run wo_deliverable!!")
 
 except arcpy.ExecuteError:
     arcpy.AddError(arcpy.GetMessages(2))

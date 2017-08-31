@@ -1,7 +1,26 @@
+# ---------------------------------------------------------------------------
 # select_tes_layer.py
 #
-# Usage: select_fields
-# Description: Selects only those records with Scientific Names equal to TES list
+# Description: Using original data it projects data to an output geodatabase in
+#              Nad83 CAALB projection. The projected data runs through a
+#              select based on Scientific Names equal to TES list.
+#              This list is referenced by using a csv with Buffers, Common Names,
+#              and forest dependent distinctions. FRA specific fields are added
+#              to the subset of data. From that relationship a correct
+#              buffer value is assigned to populate the buffer field. Before any
+#              analysis the data is exported to a geodatabase for the FWS.
+#              After the export a buffer analysis runs on certain datasets.
+#              This step has several distinct approaches based on what dataset
+#              is processing. After this and explode and repair occurs.
+#              Certain datasets will require a final merge with special feature classes.
+#
+# Runtime Estimates: TESP       = 1 min 26 sec
+#                    Wild Sites =       54 sec
+#                    Wild Obs   = 5 min 43 sec
+#                    CHab Line  =       44 sec
+#                    Chab Poly  =       37 sec
+#                    CNDDB      = 3 min 49 sec
+#
 # Created by: Josh Klaus 07/27/2017 jklaus@fs.fed.us
 # ---------------------------------------------------------------------------
 
@@ -157,14 +176,14 @@ elif layerType == "CNDDB":
 arcpy.AddMessage("csv File: " + csvFile)
 
 # uncomment when using arcgis 10.3
-with open(csvFile, 'rb') as f:
-    reader = csv.reader(f)
-    selectionList = list(reader)
-
-# use when using arcgis pro
-# with open(csvFile) as f:
+# with open(csvFile, 'rb') as f:
 #     reader = csv.reader(f)
 #     selectionList = list(reader)
+
+# use when using arcgis pro
+with open(csvFile) as f:
+    reader = csv.reader(f)
+    selectionList = list(reader)
 
 arcpy.AddMessage("Listing of csv table data: ")
 for item in selectionList:

@@ -1,380 +1,837 @@
+# select_tes_layer.py
+#
+# Description: Using original data it projects data to an output geodatabase in
+#              Nad83 CAALB projection. The projected data runs through a
+#              select based on Scientific Names equal to TES list.
+#              This list is referenced by using a csv with Buffers, Common Names,
+#              and forest dependent distinctions. FRA specific fields are added
+#              to the subset of data. From that relationship a correct
+#              buffer value is assigned to populate the buffer field. Before any
+#              analysis the data is exported to a geodatabase for the FWS.
+#              After the export a buffer analysis runs on certain datasets.
+#              This step has several distinct approaches based on what dataset
+#              is processing. After this and explode and repair occurs.
+#              Certain datasets will require a final merge with special feature classes.
+#
+# Runtime Estimates:
+#
+# Created by: Josh Klaus 07/27/2017 jklaus@fs.fed.us
+# ---------------------------------------------------------------------------
+
 # Import arcpy module
 import arcpy
 import sys
 import csv
 import os
+import datetime
 
 # Set workspace or obtain from user input
-in_workspace = r"C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
+in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
 # in_workspace = sys.argv[1]
 
 arcpy.env.workspace = in_workspace
 arcpy.env.overwriteOutput = True
 
-# selectQuery = sys.argv[3]
+# -------------------------------------------------------------------------------
+# the following section will create folders and geodatabases to store Deliverables
+# for different stages of the processing of the individual databases
+# -------------------------------------------------------------------------------
 
-selectQuery = """ SCIENTIFIC_NAME = 'Acanthomintha ilicifolia' OR SCIENTIFIC_NAME = 'Acanthoscyphus parishii var. goodmaniana'
-                  OR SCIENTIFIC_NAME = 'Allium munzii' OR SCIENTIFIC_NAME = 'Allium tribracteatum' OR SCIENTIFIC_NAME = 'Arabis johnstonii'
-                  OR SCIENTIFIC_NAME = 'Arabis macdonaldiana' OR SCIENTIFIC_NAME = 'Arenaria ursina' OR SCIENTIFIC_NAME = 'Astragalus albens'
-                  OR SCIENTIFIC_NAME = 'Astragalus brauntonii' OR SCIENTIFIC_NAME = 'Astragalus ertterae' OR SCIENTIFIC_NAME = 'Astragalus pachypus var. jaegeri'
-                  OR SCIENTIFIC_NAME = 'Astragalus shevockii' OR SCIENTIFIC_NAME = 'Astragalus tricarinatus' OR SCIENTIFIC_NAME = 'Baccharis vanessae'
-                  OR SCIENTIFIC_NAME = 'Berberis nevinii' OR SCIENTIFIC_NAME = 'Brodiaea filifolia' OR SCIENTIFIC_NAME = 'Castilleja cinerea'
-                  OR SCIENTIFIC_NAME = 'Castilleja plagiotoma' OR SCIENTIFIC_NAME = 'Caulanthus californicus' OR SCIENTIFIC_NAME = 'Ceanothus ophiochilus'
-                  OR SCIENTIFIC_NAME = 'Chorizanthe parryi var. parryi' OR SCIENTIFIC_NAME = 'Chorizanthe polygonoides ssp. longispina'
-                  OR SCIENTIFIC_NAME = 'Clarkia springvillensis' OR SCIENTIFIC_NAME = 'Delphinium hesperium ssp. cuyamacae'
-                  OR SCIENTIFIC_NAME = 'Dicentra nevadensis' OR SCIENTIFIC_NAME = 'Dodecahema leptoceras' OR SCIENTIFIC_NAME = 'Erigeron parishii'
-                  OR SCIENTIFIC_NAME = 'Eriogonum breedlovei var. breedlovei' OR SCIENTIFIC_NAME = 'Eriogonum kennedyi var. austromontanum'
-                  OR SCIENTIFIC_NAME = 'Eriogonum ovalifolium var. vineum' OR SCIENTIFIC_NAME = 'Eriogonum spectabile' OR SCIENTIFIC_NAME = 'Horkelia tularensis'
-                  OR SCIENTIFIC_NAME = 'Imperata brevifolia' OR SCIENTIFIC_NAME = 'Leptosiphon floribundum ssp. hallii' OR SCIENTIFIC_NAME = 'Lupinus constancei'
-                  OR SCIENTIFIC_NAME = 'Monardella macrantha ssp. hallii' OR SCIENTIFIC_NAME = 'Monardella viridis ssp. saxicola'
-                  OR SCIENTIFIC_NAME = 'Nemacladus twisselmannii' OR SCIENTIFIC_NAME = 'Orcuttia tenuis' OR SCIENTIFIC_NAME = 'Oreonana vestita'
-                  OR SCIENTIFIC_NAME = 'Penstemon californicus' OR SCIENTIFIC_NAME = 'Phlox hirsuta' OR SCIENTIFIC_NAME = 'Physaria kingii ssp. bernardina'
-                  OR SCIENTIFIC_NAME = 'Lesquerella kingii ssp. bernardina' OR SCIENTIFIC_NAME = 'Poa atropurpurea' OR SCIENTIFIC_NAME = 'Pseudobahia peirsonii'
-                  OR SCIENTIFIC_NAME = 'Packera layneae' OR SCIENTIFIC_NAME = 'Sidalcea hickmanii ssp. parishii' OR SCIENTIFIC_NAME = 'Sidalcea keckii'
-                  OR SCIENTIFIC_NAME = 'Sidalcea pedata' OR SCIENTIFIC_NAME = 'Streptanthus cordatus var. piutensis' OR SCIENTIFIC_NAME = 'Streptanthus fenestratus'
-                  OR SCIENTIFIC_NAME = 'Taraxacum californicum' OR SCIENTIFIC_NAME = 'Thelypodium stenopetalum' OR SCIENTIFIC_NAME = 'Thelypteris puberula var. sonorensis'
-                  OR SCIENTIFIC_NAME = 'Trifolium dedeckerae' OR SCIENTIFIC_NAME = 'Tuctoria greenei' OR SCIENTIFIC_NAME = 'Howellia aquatilis'
-                  OR SCIENTIFIC_NAME = 'Heterotheca shevockii' OR SCIENTIFIC_NAME = 'Marina orcuttii var. orcuttii'
-                  OR ACCEPTED_SCIENTIFIC_NAME = 'Mahonia nevinii' OR ACCEPTED_SCIENTIFIC_NAME = 'Stanfordia californica' OR ACCEPTED_SCIENTIFIC_NAME = 'Clarkia springvillensis'
-                  OR ACCEPTED_SCIENTIFIC_NAME = 'Abronia alpina' OR ACCEPTED_SCIENTIFIC_NAME = 'Calochortus persistens' """
+# using the now variable to assign year everytime there is a hardcoded 2017
+now = datetime.datetime.today()
+curYear = str(now.year)
+arcpy.AddMessage("Year is " + curYear)
 
-# selection = sys.argv[3].split(',')
+sciNameField = ""
+commonNameField = ""
+sourceField = ""
 
-tl = """Acanthomintha ilicifolia,Arenaria ursina,Astragalus tricarinatus,
-        Baccharis vanessae,Brodiaea filifolia,
-        Castilleja cinerea,Ceanothus ophiochilus,Eriogonum kennedyi var. austromontanum,
-        Orcuttia tenuis,Pseudobahia peirsonii,Howellia aquatilis"""
+tesvariablelist = ["Endangered", "Threatened", "Sensitive"]
 
+for tes in tesvariablelist:
+    newPath = in_workspace + "\\2017_" + tes
+    tesGDB = "2017_FRA_" + tes + "_OriginalDataNoBuffers_FWSDeliverable_CAALB83.gdb"
 
-sl = """Allium tribracteatum,Arabis johnstonii,Astragalus ertterae,Astragalus pachypus var. jaegeri,Astragalus shevockii,Castilleja plagiotoma,
-        Chorizanthe parryi var. parryi,Chorizanthe polygonoides ssp. longispina,Delphinium hesperium ssp. cuyamacae,Dicentra nevadensis,
-        riogonum breedlovei var. breedlovei,Eriogonum spectabile,Lupinus constancei,Monardella macrantha ssp. hallii,
-        Monardella viridis ssp. saxicola,Nemacladus twisselmannii,Oreonana vestita,Penstemon californicus,Streptanthus cordatus var. piutensis,
-        Streptanthus fenestratus,Thelypteris puberula var. sonorensis,Trifolium dedeckerae,Sidalcea hickmanii ssp. parishii,Heterotheca shevockii,
-        Horkelia tularensis, Marina orcuttii var. orcuttii"""
+    if not os.path.exists(newPath):
+        arcpy.AddMessage("Creating directory for "+ tes + " Data Deliverables ....")
+        os.makedirs(newPath)
+        arcpy.AddMessage("Creating Geodatabase for " + tes + " Data Deliverables ....")
+        arcpy.CreateFileGDB_management(newPath, tesGDB)
 
-threatenedList = tl.split(',')
-sensitiveList = sl.split(',')
+# --------------------------------------------------------------------------------
+#  Please note the following selections of inTable and csv are file dependent
+# --------------------------------------------------------------------------------
 
-# threatenedList = sys.argv[4].split(',')
-# sensitiveList = sys.argv[5].split(',')
+layerType = sys.argv[4]
 
-newpath_threatened = in_workspace + "2017_Threatened"
-threatened_gdb = "2017_FRA_Threatened_OriginalDataNoBuffers_FWSDeliverable_CAALAB83.gdb"
-newpath_endangered = in_workspace + "2017_Endangered"
-endangered_gdb = "2017_FRA_Endangered_OriginalDataNoBuffers_FWSDeliverable_CAALAB83.gdb"
-newpath_sensitive  = in_workspace + "2017_Sensitive"
-sensitive_gdb = "2017_FRA_Sensitive_OriginalDataNoBuffers_FWSDeliverable_CAALAB83.gdb"
+# layerType = "CNDDB"
 
-if not os.path.exists(newpath_sensitive):
-    arcpy.AddMessage("Creating directory for Sensitive Data Deliverables ....")
-    os.makedirs(newpath_sensitive)
+outputDir = in_workspace + "\\" + "Output"
+if not os.path.exists(outputDir):
+    arcpy.AddMessage("Creating directory for Output")
+    os.makedirs(outputDir)
 
-arcpy.AddMessage("Creating Geodatabase for Sensitive Data Deliverables ....")
-arcpy.CreateFileGDB_management(newpath_sensitive, sensitive_gdb)
+if not os.path.exists(outputDir + "\\" + layerType):
+    arcpy.AddMessage("Creating output directory for " + layerType)
+    os.makedirs(outputDir + "\\" + layerType)
 
-if not os.path.exists(newpath_endangered):
-    arcpy.AddMessage("Creating directory for Endangered Data Deliverables ....")
-    os.makedirs(newpath_endangered)
+layerWorkSpace = outputDir + "\\" + layerType + "\\"
+projectedGDB = layerType + "_Test_2017_CAALB83_newproj.gdb"
+foundFC = layerType + "_" + curYear + "_original"
 
-arcpy.AddMessage("Creating Geodatabase for Endangered Data Deliverables ....")
-arcpy.CreateFileGDB_management(newpath_endangered, endangered_gdb)
+arcpy.AddMessage("Layer Type: " + layerType)
 
-if not os.path.exists(newpath_threatened):
-    arcpy.AddMessage("Creating directory for Threatened Data Deliverables ....")
-    os.makedirs(newpath_threatened)
+#-------------------------------------------------------------------------------------------
+# the below is hardcoded values used for testing and debugging
+inTable = in_workspace
 
-arcpy.AddMessage("Creating Geodatabase for Threatened Data Deliverables ....")
-arcpy.CreateFileGDB_management(newpath_threatened, threatened_gdb)
+# inTable = sys.argv[2]
 
-intable = in_workspace + "\\2017_EDW_CAALB83.gdb\\EDW_TESP_2017_OccurrenceAll_FoundPlants"
-# intable = sys.argv[2]
+# if inTable == "#":
+if layerType == "TESP":
+    inTable += "\\USFS_EDW\\EDW_TESP_r05_021617_Everything.gdb\\TESP\\TESP_OccurrenceAll"
+elif layerType == "Wildlife_Sites":
+    inTable += "\\USFS_EDW\\EDW_FishWildlife_R05_021617_Everything.gdb\\Fish_and_Wildlife\\WildlifeSites"
+elif layerType == "Wildlife_Observations":
+    inTable += "\\USFS_EDW\\EDW_FishWildlife_R05_021617_Everything.gdb\\Fish_and_Wildlife\\FishWildlife_Observation"
+elif layerType == "Critical_Habitat_Lines":
+    inTable += "\\CHab\\crithab_all_layers\\CRITHAB_LINE.shp"
+elif layerType == "Critical_Habitat_Polygons":
+    inTable += "\\CHab\\crithab_all_layers\\CRITHAB_POLY.shp"
+elif layerType == "CNDDB":
+    inTable += "\\CNDDB\\gis_gov\\cnddb.shp"
 
-outtable = intable + "_complete"
+#------------------------------------------------------------------------------
+# Testing to see if data is projected in NAD 1983 California Teale Albers
+# If not run Project_management to project the data
+#------------------------------------------------------------------------------
 
-#csvFile = sys.argv[6]
-csvFile = r"C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\TESP_SummaryTable.csv"
+if arcpy.Exists(layerWorkSpace + "\\" + projectedGDB):
+    newProjectWorkSpace = layerWorkSpace + "\\" + projectedGDB + "\\" + foundFC
+else:
+    arcpy.CreateFileGDB_management(layerWorkSpace, projectedGDB)
+    newProjectWorkSpace = layerWorkSpace + "\\" + projectedGDB + "\\" + foundFC
+
+selectFC = newProjectWorkSpace + "_select"
+
+arcpy.AddMessage("Origin of Data: " + inTable)
+
+spatial_ref = arcpy.Describe(inTable).spatialReference
+
+arcpy.AddMessage("Current Spatial Reference is : " + spatial_ref.name)
+
+sr = arcpy.SpatialReference(3310)
+
+if spatial_ref.name != "NAD_1983_California_Teale_Albers":
+    arcpy.AddMessage("Reprojecting layer to NAD 1983 California Teale Albers ....")
+    arcpy.Project_management(inTable, newProjectWorkSpace, sr)
+
+# ------------------------------------------------------------------------------------------
+# Adding fields to store information that will be used for final deliverables
+# ------------------------------------------------------------------------------------------
+
+arcpy.AddMessage("Adding fields [UnitID, GRANK_FIRE, SOURCEFIRE, SNAME_FIRE, CNAME_FIRE]")
+arcpy.AddMessage("Adding fields [BUFFT_FIRE, BUFFM_FIRE, CMNT_FIRE, INST_FIRE]")
+if layerType == "CNDDB":
+    arcpy.AddMessage("Adding field Type to record Plant vs Animal to filter later after intersection for removal of BDF")
+
+arcpy.AddField_management(newProjectWorkSpace, "UnitID", "TEXT", "", "", "5", "", "NULLABLE", "NON_REQUIRED", "")
+arcpy.AddField_management(newProjectWorkSpace, "GRANK_FIRE", "TEXT", "", "", "50", "", "NULLABLE", "NON_REQUIRED", "")
+arcpy.AddField_management(newProjectWorkSpace, "SOURCEFIRE", "TEXT", "", "", "50", "", "NULLABLE", "NON_REQUIRED", "")
+arcpy.AddField_management(newProjectWorkSpace, "SNAME_FIRE", "TEXT", "", "", "60", "", "NULLABLE", "NON_REQUIRED", "")
+arcpy.AddField_management(newProjectWorkSpace, "CNAME_FIRE", "TEXT", "", "", "60", "", "NULLABLE", "NON_REQUIRED", "")
+arcpy.AddField_management(newProjectWorkSpace, "BUFFT_FIRE", "SHORT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
+arcpy.AddField_management(newProjectWorkSpace, "BUFFM_FIRE", "SHORT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
+arcpy.AddField_management(newProjectWorkSpace, "CMNT_FIRE", "TEXT", "", "", "150", "", "NULLABLE", "NON_REQUIRED", "")
+arcpy.AddField_management(newProjectWorkSpace, "INST_FIRE", "TEXT", "", "", "150", "", "NULLABLE", "NON_REQUIRED", "")
+if layerType == "CNDDB":
+    arcpy.AddField_management(newProjectWorkSpace, "Type", "TEXT", "", "", "50", "", "NULLABLE", "NON_REQUIRED", "")
+
+# Note the different ways of bringing in a csv for lookup data on the buffer amount, forest, and status
+# _____________________________________________________________________________________________________
+
+# csvFile = sys.argv[3]
+
+csvFile = in_workspace + "\\csv_tables"
+
+if layerType == "TESP":
+    csvFile += "\\TESP_SummaryTable.csv"
+elif layerType == "Wildlife_Sites":
+    csvFile += "\\Wildlife_Sites_SummaryTable.csv"
+elif layerType == "Wildlife_Observations":
+    csvFile += "\\Wildlife_Observations_SummaryTable.csv"
+elif layerType == "Critical_Habitat_Polygons":
+    csvFile += "\\crithab.csv"
+elif layerType == "Critical_Habitat_Lines":
+    csvFile += "\\crithab.csv"
+elif layerType == "CNDDB":
+    csvFile += "\\CNDDB_SummaryTable.csv"
+
+arcpy.AddMessage("csv File: " + csvFile)
+
+# uncomment when using arcgis 10.3
+with open(csvFile, 'rb') as f:
+    reader = csv.reader(f)
+    selectionList = list(reader)
+
+# use when using arcgis pro
+# with open(csvFile) as f:
+#     reader = csv.reader(f)
+#     selectionList = list(reader)
+
+arcpy.AddMessage("Listing of csv table data: ")
+for item in selectionList:
+    arcpy.AddMessage("  " + str(item))
+
+if layerType == "TESP":
+    sciNameField = "SCIENTIFIC_NAME"
+    commonNameField = "ACCEPTED_COMMON_NAME"
+    sourceField = "EDW TESP OccurrencesALL_FoundPlant pulled 2/2017"
+elif layerType == "Wildlife_Sites":
+    sciNameField = "SCI_NAME"
+    commonNameField = "COMMON_NAME"
+    sourceField = "EDW Wildlife Sites pulled 2/2017"
+elif layerType == "Wildlife_Observations":
+    sciNameField = "SCIENTIFIC_NAME"
+    commonNameField = "COMMON_NAME"
+    sourceField = "EDW OBS FishWildlife pulled 2/2017"
+elif layerType == "Critical_Habitat_Polygons":
+    sciNameField = "sciname"
+    commonNameField = "comname"
+    sourceField = "FWS Critical Habitat pulled 2/2017"
+elif layerType == "Critical_Habitat_Lines":
+    sciNameField = "sciname"
+    commonNameField = "comname"
+    sourceField = "FWS Critical Habitat pulled 2/2017"
+elif layerType == "CNDDB":
+    sciNameField = "SNAME"
+    commonNameField = "CNAME"
+    sourceField = 'CA CNDDB GOV version pulled 2/2017'
+
+# --------------------------------------------------------------------
+# Builds the selection query used in SelectLayerByAttribute_management
+# customized based on what the Scientific name field is and what other
+# specifics we need to filter the data on based on the type of database
+# --------------------------------------------------------------------
+selectQuery = "(" + sciNameField + " = "
+
+selectionListLength = len(selectionList)
+
+for n in range(1, selectionListLength-1):
+    selectQuery += "'" + selectionList[n][0] + "' OR " + sciNameField + " = "
+
+selectQuery += "'" + selectionList[selectionListLength-1][0] + "')"
+
+if layerType == "CNDDB":
+    selectQuery += """
+                   AND (PRESENCE = 'Presumed Extant') 
+                   AND (ACCURACY = '1/10 mile' OR ACCURACY = '1/5 mile' 
+                     OR ACCURACY = '80 meters' OR ACCURACY = 'specific area')
+                   """
+elif layerType == "Wildlife_Sites":
+    selectQuery += " AND (ASSOC_OBS > 0) AND (SITE_NAME NOT LIKE '%Study%') "
+elif layerType == "Wildlife_Observations":
+    selectQuery += " AND (TOTAL_DETECTED > 0 OR TOTAL_DETECTED IS NULL )"
+elif layerType == "Critical_Habitat_Lines":
+    selectQuery += " OR sciname = 'Oncorhynchus (=Salmo) mykiss' OR sciname = 'Catostomus microps'"
+elif layerType == "TESP":
+    for n in range(1, selectionListLength-1):
+        selectQuery += " OR (ACCEPTED_SCIENTIFIC_NAME = " + "'" + selectionList[n][0] + "')"
+        selectQuery += " AND (PLANT_FOUND = 'YES') "
+
+    # Old Hardcoded values for ACCEPTED_SCIENTIFIC_NAME
+    # Stacey decided to pull all - which found other hits but not in relevant forests
+
+    # selectQuery += """
+    #                 OR ACCEPTED_SCIENTIFIC_NAME = 'Mahonia nevinii'
+    #                 OR ACCEPTED_SCIENTIFIC_NAME = 'Stanfordia californica'
+    #                 OR ACCEPTED_SCIENTIFIC_NAME = 'Clarkia springvillensis'
+    #                 OR ACCEPTED_SCIENTIFIC_NAME = 'Abronia alpina'
+    #                 OR ACCEPTED_SCIENTIFIC_NAME = 'Calochortus persistens'
+    #                 """
+
+arcpy.AddMessage("The Selection Query will be : " + selectQuery)
+
+# Need to clean this up so select query can be viewed:
+# sqLength = int(len(selectQuery))
+# n = int(round(len(selectQuery) / 100))
+#
+# arcpy.AddMessage("The Selection Query will be : " )
+# arcpy.AddMessage("  " + selectQuery[0:n])
+# arcpy.AddMessage("  " + selectQuery[n:n+100])
+# arcpy.AddMessage("  " + selectQuery[n+100:n+200])
+# arcpy.AddMessage("  " + selectQuery[n+200:n+300])
+# arcpy.AddMessage("  " + selectQuery[n+300:n+400])
+# arcpy.AddMessage("  " + selectQuery[n+400:n+800])
+# arcpy.AddMessage("  " + selectQuery[n+800:sqLength-100])
+# arcpy.AddMessage("  " + selectQuery[n+800:sqLength-100])
+# arcpy.AddMessage("  " + selectQuery[sqLength-100:sqLength])
+
+# -----------------------------------------------------------------------------------------
 
 try:
 
-    arcpy.MakeFeatureLayer_management(intable, "lyr" )
-
-    arcpy.AddMessage("-----------------")
-    arcpy.AddMessage("Selection: " + selectQuery)
-    arcpy.AddMessage("-----------------")
+    arcpy.MakeFeatureLayer_management(newProjectWorkSpace, "lyr" )
 
     arcpy.AddMessage("Selecting layers based on selection ....")
-    arcpy.SelectLayerByAttribute_management ("lyr", "NEW_SELECTION", selectQuery )
-
-    # selectQuery = 'SCIENTIFIC_NAME = '
-    # selectQuery += ' OR SCIENTIFIC_NAME = '.join(selection)
+    arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION", selectQuery )
 
     arcpy.AddMessage("Copying selected records to new feature ......")
-    arcpy.CopyFeatures_management("lyr", outtable)
+    arcpy.CopyFeatures_management("lyr", selectFC)
 
-    result = arcpy.GetCount_management(outtable)
+    result = arcpy.GetCount_management(selectFC)
     count = int(result.getOutput(0))
     arcpy.AddMessage("Total Number of Records: " + str(count))
 
-    cur = arcpy.UpdateCursor(outtable)
     threatNum = 0
     sensitiveNum = 0
     endangerNum = 0
-
-    field = "SCIENTIFIC_NAME"
-    field2 = "ACCEPTED_COMMON_NAME"
+    otherNum = 0
     arcpy.AddMessage("Populating attributes .....")
 
-    for row in cur:
-        speciesrow = row.getValue(field)
-        buffer_amount = 1
+    if layerType == "Critical_Habitat_Polygons" or layerType == "Critical_Habitat_Lines":
+        cur = arcpy.UpdateCursor(selectFC)
 
-        row.SOURCEFIRE = "EDW TESp OccurrencesALL_FoundPlant pulled 2/2017"
-        row.SNAME_FIRE = speciesrow
-        row.CNAME_FIRE = row.getValue(field2)
+        for row in cur:
+            speciesrow = row.getValue(sciNameField)
+            bufferAmount = 0
 
-        with open(csvFile) as f:
-            reader = csv.reader(f)
-            for line in reader:
+            row.SOURCEFIRE = sourceField
+            row.SNAME_FIRE = speciesrow
+            row.CNAME_FIRE = row.getValue(commonNameField)
+            row.BUFFT_FIRE = bufferAmount
+            row.BUFFM_FIRE = bufferAmount * 0.3048
 
-                species = line[0]
-                status = line[1]
-                buff = line[2]
-
-                if species.startswith(speciesrow) and status != "CH":
-
-                    if buff == "NN" or "":
-                            buffer_amount = 0
+            for item in selectionList:
+                if item[0].startswith(speciesrow):
+                    row.GRANK_FIRE = item[1]
+                    if item[1] == "Threatened":
+                        threatNum += 1
+                    elif item[1] == "Sensitive":
+                        sensitiveNum += 1
+                    elif item[1] == "Endangered":
+                        endangerNum += 1
                     else:
-                            buffer_amount = int(buff)
+                        otherNum += 1
+
+            cur.updateRow(row)
+
+        del cur
+
+    elif layerType == "CNDDB":
+        cur = arcpy.UpdateCursor(selectFC)
+        accuracyField = "ACCURACY"
+
+        for row in cur:
+            speciesrow = row.getValue(sciNameField)
+            bufferAmount = 0
+            accuracy = row.getValue(accuracyField)
+
+            row.SOURCEFIRE = sourceField
+            row.SNAME_FIRE = speciesrow
+            row.CNAME_FIRE = row.getValue(commonNameField)
+
+            for item in selectionList:
+
+                if item[0].startswith(speciesrow):
+                    row.GRANK_FIRE = item[1]
+                    row.TYPE = item[5]
+
+                    if accuracy == "1/10 mile":
+                        if item[2] == "300":
+                            bufferAmount = 3
+                        elif item[2] == "600":
+                            bufferAmount = 72
+                    elif accuracy == "1/5 mile":
+                        if item[2] == "300":
+                            bufferAmount = 3
+                        elif item[2] == "600":
+                            bufferAmount = 3
+                    elif accuracy == "80 meters":
+                        if item[2] == "300":
+                            bufferAmount = 38
+                        elif item[2] == "600":
+                            bufferAmount = 338
+                    elif accuracy == "specific area":
+                        bufferAmount = int(item[2])
+                    else:
+                        bufferAmount = 2
+
+            row.BUFFT_FIRE = bufferAmount
+            row.BUFFM_FIRE = bufferAmount * 0.3048
+            if row.GRANK_FIRE == "Threatened":
+                threatNum += 1
+            elif row.GRANK_FIRE == "Sensitive":
+                sensitiveNum += 1
+            elif row.GRANK_FIRE == "Endangered":
+                endangerNum += 1
+            else:
+                otherNum += 1
+
+            cur.updateRow(row)
+
+        del cur
+
+    else:
+
+        forestField = "FS_UNIT_NAME"
+        cur = arcpy.UpdateCursor(selectFC)
+
+        for row in cur:
+            speciesrow = row.getValue(sciNameField)
+            forestrow  = row.getValue(forestField)
+            bufferAmount = 1
+
+            row.SOURCEFIRE = sourceField
+            row.SNAME_FIRE = speciesrow
+            row.CNAME_FIRE = row.getValue(commonNameField)
+
+            for item in selectionList:
+
+                if item[0].startswith(speciesrow) and item[3] == "":
+                    row.GRANK_FIRE = item[1]
+                    bufferAmount = int(item[2])
                     break
-        row.BUFFT_FIRE = buffer_amount
-        row.BUFFM_FIRE = buffer_amount * 0.3048
 
-        if row.getValue(field) in threatenedList :
-            row.GRANK_FIRE = "Threatened"
-            threatNum += 1
-        elif row.getValue(field) in sensitiveList:
-            row.GRANK_FIRE = "Sensitive"
-            sensitiveNum += 1
-        else:
-            row.GRANK_FIRE = "Endangered"
-            endangerNum += 1
-        cur.updateRow(row)
+                elif item[0].startswith(speciesrow)  and item[3] == forestrow:
+                    row.GRANK_FIRE = item[1]
+                    bufferAmount = int(item[2])
+                    break
 
+                elif item[0].startswith(speciesrow) and item[3] != forestrow:
+                    row.GRANK_FIRE = item[1]
+                    bufferAmount = 0
+
+            row.BUFFT_FIRE = bufferAmount
+            row.BUFFM_FIRE = bufferAmount * 0.3048
+
+            if row.GRANK_FIRE == "Threatened":
+                threatNum += 1
+            elif row.GRANK_FIRE == "Sensitive":
+                sensitiveNum += 1
+            elif row.GRANK_FIRE == "Endangered":
+                endangerNum += 1
+            else:
+                otherNum += 1
+
+            cur.updateRow(row)
+
+        del cur
+
+    arcpy.AddMessage("Number of Endangered = " + str(endangerNum))
     arcpy.AddMessage("Number of Threatened = " + str(threatNum))
     arcpy.AddMessage("Number of Sensitive = " + str(sensitiveNum))
-    arcpy.AddMessage("Number of Endangered = " + str(endangerNum))
-
-    del cur
+    arcpy.AddMessage("Number of Other = " + str(otherNum))
 
     arcpy.AddMessage("Splitting current state of data into deliverable Geodatabases .....")
 
 #    does not work in ArcGIS only ArcGIS Pro
-#    arcpy.SplitByAttributes_analysis(outtable, sensitive_gdb, "GRANK_FIRE")
+#    arcpy.SplitByAttributes_analysis(selectFC, sensitive_gdb, "GRANK_FIRE")
 
-#    status_fc = intable + "_noAAAbuf"
+    tesRankList = ["Endangered", "Threatened", "Sensitive"]
 
-##    Work on a way to take the three copy sections to GDB and place in a function
-##    __________________________________________________________________________________________________
-###--------------Copying to Sensitive Geodatabase for interim deliverable step
-    arcpy.MakeFeatureLayer_management(outtable, "lyr" )
+    for tesRank in tesRankList:
+        arcpy.MakeFeatureLayer_management(selectFC, "lyr")
 
-    arcpy.AddMessage("Selecting layers based on selection ....")
-    arcpy.SelectLayerByAttribute_management ("lyr", "NEW_SELECTION", "GRANK_FIRE = 'Sensitive'" )
+        arcpy.AddMessage("Selecting records based on " + tesRank + " rank ....")
+        arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION", "GRANK_FIRE = '" + tesRank + "'")
 
-    outlocation = newpath_sensitive + "\\\\" + sensitive_gdb + "\\\\EDW_TESP_2017_Sensitive_OccurrenceAll_FoundPlants_nobuf"
+        outlocation = in_workspace + "\\2017_" + tesRank + "\\" + "2017_FRA_" + \
+                      tesRank + "_OriginalDataNoBuffers_FWSDeliverable_CAALB83.gdb" + "\\"
 
-    arcpy.AddMessage("Copying selected records to Sensitive Geodatabase ......")
-    arcpy.CopyFeatures_management("lyr", outlocation)
+        if layerType == "TESP":
+            outlocation += "EDW_TESP_2017_" + tesRank + "_OccurrenceAll_FoundPlants_nobuf"
+        elif layerType == "Wildlife_Sites":
+            outlocation += "EDW_WildlifeSites_2017_" + tesRank + "_nobuf"
+        elif layerType == "Wildlife_Observations":
+            outlocation += "EDW_FishWildlife_Observation_2017_" + tesRank + "_nobuf"
+        elif layerType == "Critical_Habitat_Polygons":
+            outlocation += "CHabPolyAllSelectedSpecies_2017_" + tesRank + "_nobuf"
+        elif layerType == "Critical_Habitat_Lines":
+            outlocation += "CHabLineAllSelectedSpecies_2017_" + tesRank + "_nobuf"
+        elif layerType == "CNDDB":
+            outlocation += "CNDDB_selects_2017_" + tesRank + "_nobuf"
 
-    result = arcpy.GetCount_management(outlocation)
-    count = int(result.getOutput(0))
-    arcpy.AddMessage("Total Number of Records: " + str(count))
+        result = arcpy.GetCount_management("lyr")
+        count = int(result.getOutput(0))
+        arcpy.AddMessage("Total Number of Records: " + str(count))
 
-###--------------Copying to Threatened Geodatabase for interim deliverable step
+        if count > 0:
+            arcpy.AddMessage("Copying selected records to " + tesRank + " Geodatabase ......")
+            arcpy.CopyFeatures_management("lyr", outlocation)
 
-    arcpy.MakeFeatureLayer_management(outtable, "lyr" )
+# ----------------------------------------------------------------------
 
-    arcpy.AddMessage("Selecting layers based on selection ....")
-    arcpy.SelectLayerByAttribute_management ("lyr", "NEW_SELECTION", "GRANK_FIRE = 'Threatened'" )
-
-    outlocation = newpath_threatened + "\\\\" + threatened_gdb + "\\\\EDW_TESP_2017_Threatened_OccurrenceAll_FoundPlants_nobuf"
-
-    arcpy.AddMessage("Copying selected records to Threatened Geodatabase ......")
-    arcpy.CopyFeatures_management("lyr", outlocation)
-
-    result = arcpy.GetCount_management(outlocation)
-    count = int(result.getOutput(0))
-    arcpy.AddMessage("Total Number of Threatened Records: " + str(count))
-
-###--------------Copying to Endangered Geodatabase for interim deliverable step
-    arcpy.MakeFeatureLayer_management(outtable, "lyr" )
-
-    arcpy.AddMessage("Selecting layers based on selection ....")
-    arcpy.SelectLayerByAttribute_management ("lyr", "NEW_SELECTION", "GRANK_FIRE = 'Endangered'" )
-
-    outlocation = newpath_endangered + "\\\\" + endangered_gdb + "\\\\EDW_TESP_2017_Endangered_OccurrenceAll_FoundPlants_nobuf"
-
-    arcpy.AddMessage("Copying selected records to Endangered Geodatabase ......")
-    arcpy.CopyFeatures_management("lyr", outlocation)
-
-    result = arcpy.GetCount_management(outlocation)
-    count = int(result.getOutput(0))
-    arcpy.AddMessage("Total Number of Endangered Records: " + str(count))
-
-##    __________________________________________________________________________________________________
-
-
-##----------------------------------------------------------------------
-## Tested below pieces - commenting out to test attribution
-##----------------------------------------------------------------------
-    outFeatureClass = outtable + "_singlepart"
+    singlePartFeatureClass = newProjectWorkSpace + "_singlepart"
+    bufferFC = newProjectWorkSpace + "_buffer"
+    singlePartBufferedFC = newProjectWorkSpace + "_buffered_single"
+    projGDB = layerWorkSpace + "\\" + projectedGDB + "\\"
+    siteMerge = newProjectWorkSpace + "_merge"
 
     arcpy.AddMessage("Converting multipart geometry to singlepart .....")
 
-    arcpy.MultipartToSinglepart_management(outtable, outFeatureClass)
+    arcpy.MultipartToSinglepart_management(selectFC, singlePartFeatureClass)
 
-    inCount = int(arcpy.GetCount_management(outtable).getOutput(0))
-    outCount = int(arcpy.GetCount_management(outFeatureClass).getOutput(0))
+    inCount = int(arcpy.GetCount_management(selectFC).getOutput(0))
+    outCount = int(arcpy.GetCount_management(singlePartFeatureClass).getOutput(0))
 
     arcpy.AddMessage("Number of new records: " + str(outCount - inCount))
 
     arcpy.AddMessage("Repairing Geometry ......")
-    arcpy.RepairGeometry_management(outFeatureClass)
+    arcpy.RepairGeometry_management(singlePartFeatureClass)
 
-    arcpy.AddMessage("Buffering features ....")
-    buffer_fc = outFeatureClass + "_buffer"
-    buffer_field = "BUFFM_FIRE"
-    arcpy.Buffer_analysis(outFeatureClass, buffer_fc, buffer_field)
+    if layerType != "Critical_Habitat_Polygons" and layerType != "Critical_Habitat_Lines":
+        arcpy.AddMessage("Buffering features ....")
+        bufferField = "BUFFM_FIRE"
+        arcpy.Buffer_analysis(singlePartFeatureClass, bufferFC, bufferField)
 
-    outFeatClass = buffer_fc + "_spart"
+        arcpy.AddMessage("Converting buffer layer from multipart geometry to singlepart .....")
 
-    arcpy.AddMessage("Converting buffer layer from multipart geometry to singlepart .....")
+        arcpy.MultipartToSinglepart_management(bufferFC, singlePartBufferedFC)
 
-    arcpy.MultipartToSinglepart_management(buffer_fc, outFeatClass)
+        inCount = int(arcpy.GetCount_management(bufferFC).getOutput(0))
+        outCount = int(arcpy.GetCount_management(singlePartBufferedFC).getOutput(0))
 
-    inCount = int(arcpy.GetCount_management(buffer_fc).getOutput(0))
-    outCount = int(arcpy.GetCount_management(outFeatClass).getOutput(0))
+        arcpy.AddMessage("Number of new records: " + str(outCount - inCount))
 
-    arcpy.AddMessage("Number of new records: " + str(outCount - inCount))
+        arcpy.AddMessage("Repairing Geometry of singlepart buffer layer ......")
+        arcpy.RepairGeometry_management(singlePartBufferedFC)
 
-    arcpy.AddMessage("Repairing Geometry of singlepart buffer layer ......")
-    arcpy.RepairGeometry_management(outFeatClass)
+    if layerType == "CNDDB":
 
+        arcpy.AddMessage("Moving Shasta Crayfish files into Geodatabase")
+        # May need to change where this is being pulled
+        tempWorkSpace = in_workspace + "\\CNDDB\\2017_CNDDB_CAALB83.gdb\\"
+        crayFlowLines = tempWorkSpace + "CNDDB_Endangered_ShastaCrayfish_NHDFlowlines"
+        crayWaterBodies = tempWorkSpace + "CNDDB_Endangered_ShastaCrayfish_NHDWaterbodies"
+        arcpy.FeatureClassToGeodatabase_conversion([crayFlowLines, crayWaterBodies], projGDB)
 
-## -------------
-#   Please note everything above here comes from select_tes_layer.py
-## -------------
+        arcpy.AddMessage("Merging the CNDDDB feature class with the Shasta Crayfish files")
+        arcpy.Merge_management([crayFlowLines, crayWaterBodies, singlePartBufferedFC], siteMerge)
+        arcpy.AddMessage("Finished with merge")
 
-##-----------------------------------------------------------------------------------
-    # Note this process will be run in another script within an ArcGIS Pro environment using PairwiseIntersect_analysis
+        arcpy.AddMessage("Repairing Geometry of merged layer")
+        arcpy.RepairGeometry_management(singlePartBufferedFC)
+
+    elif layerType == "Wildlife_Observations":
+
+        arcpy.AddMessage("Breaking up into three layers prior to intersect")
+        arcpy.MakeFeatureLayer_management(singlePartBufferedFC, "lyr")
+
+        tesRankList = ["Endangered", "Threatened", "Sensitive"]
+
+        for tesRank in tesRankList:
+            finalWorkSpace = layerWorkSpace + "\\" + projectedGDB + "\\" + \
+                             "EDW_FishWildlife_Observation_2017_" + tesRank[:1]
+
+            arcpy.AddMessage("Selecting records based on " + tesRank + " rank ....")
+            arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION", "GRANK_FIRE = '" + tesRank +"'")
+            arcpy.AddMessage("Copying selected records to " + tesRank + " Feature Class ......")
+            arcpy.CopyFeatures_management("lyr", finalWorkSpace)
+
+    elif layerType == "Wildlife_Sites":
+        arcpy.AddMessage("Moving two MYLF study area files into Geodatabase")
+        # May need to fix where this data is being pulled
+        tmpWorkSpace = in_workspace + "\\USFS_EDW\\2017_EDW_CAALB83.gdb\\"
+        studyFlowLines = tmpWorkSpace + "EDW_WildlifeSites_FRASelectionSet_CAALB_NHDFlowlines_MYLF_E_INFStudyAreas_buffered"
+        studyWaterBodies = tmpWorkSpace + "EDW_WildlifeSites_FRASelectionSet_CAALB_NHDWaterbodys_MYLF_E_INFStudyAreas_buffered"
+        arcpy.FeatureClassToGeodatabase_conversion([studyFlowLines, studyWaterBodies], projGDB)
+
+        arcpy.AddMessage("Merging the Wildlife Sites feature class with the two MYLF study area")
+        arcpy.Merge_management([studyFlowLines, studyWaterBodies, singlePartBufferedFC], siteMerge)
+        arcpy.AddMessage("Finished with merge")
+
+        arcpy.AddMessage("Repairing Geometry of merged layer")
+        arcpy.RepairGeometry_management(singlePartBufferedFC)
+
+    arcpy.AddMessage("Script complete ... check data and make changes ... then proceed to intersection")
+
+    # -----------------------------------------------------------------------------------
+    #  Note this process will be run in another script within an
+    #  ArcGIS Pro environment using PairwiseIntersect_analysis
+    # -----------------------------------------------------------------------------------
     # arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
     # arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
-##-----------------------------------------------------------------------------------
 
-    usfsOwnershipFeatureClass = r"C:\Users\jklaus\Documents\Python_Testing\fire_retardant\USFS_Ownership_LSRS\2017_USFS_Ownership_CAALB83.gdb\USFS_OwnershipLSRS_2017"
+except arcpy.ExecuteError:
+    arcpy.AddError(arcpy.GetMessages(2))
+except Exception as e:
+    arcpy.AddMessage(e)
 
-    intersectFeatureClass = outFeatClass + "_intersect"
+  # Figure out a way to merge the Above section of Code with the Below section of Code
 
-    arcpy.AddMessage("Intersecting with USFS Ownership feature class .....")
-    arcpy.AddMessage("Please be patient while this runs .....")
-    # arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
-    arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
-
-    arcpy.AddMessage("Intersection complete seperating data out to Geodatabases for deliverables ......")
-
-##    Work on a way to take the three copy sections to GDB and place in a function
-##    __________________________________________________________________________________________________
-###--------------Copying to Sensitive Geodatabase for interim deliverable step
-    arcpy.MakeFeatureLayer_management(intersectFeatureClass, "lyr" )
-
-    arcpy.AddMessage("Selecting layers based on selection ....")
-    arcpy.SelectLayerByAttribute_management ("lyr", "NEW_SELECTION", "GRANK_FIRE = 'Sensitive'" )
-
-    outlocation = newpath_sensitive + "\\\\" + sensitive_gdb + "\\\\EDW_TESP_2017_Sensitive_OccurrenceAll_FoundPlants_ident"
-
-    arcpy.AddMessage("Copying selected records to Sensitive Geodatabase ......")
-    arcpy.CopyFeatures_management("lyr", outlocation)
-
-    result = arcpy.GetCount_management(outlocation)
-    count = int(result.getOutput(0))
-    arcpy.AddMessage("Total Number of Records: " + str(count))
-
-###--------------Copying to Threatened Geodatabase for interim deliverable step
-
-    arcpy.MakeFeatureLayer_management(intersectFeatureClass, "lyr" )
-
-    arcpy.AddMessage("Selecting layers based on selection ....")
-    arcpy.SelectLayerByAttribute_management ("lyr", "NEW_SELECTION", "GRANK_FIRE = 'Threatened'" )
-
-    outlocation = newpath_threatened + "\\\\" + threatened_gdb + "\\\\EDW_TESP_2017_Threatened_OccurrenceAll_FoundPlants_ident"
-
-    arcpy.AddMessage("Copying selected records to Threatened Geodatabase ......")
-    arcpy.CopyFeatures_management("lyr", outlocation)
-
-    result = arcpy.GetCount_management(outlocation)
-    count = int(result.getOutput(0))
-    arcpy.AddMessage("Total Number of Threatened Records: " + str(count))
-
-###--------------Copying to Endangered Geodatabase for interim deliverable step
-    arcpy.MakeFeatureLayer_management(intersectFeatureClass, "lyr" )
-
-    arcpy.AddMessage("Selecting layers based on selection ....")
-    arcpy.SelectLayerByAttribute_management ("lyr", "NEW_SELECTION", "GRANK_FIRE = 'Endangered'" )
-
-    outlocation = newpath_endangered + "\\\\" + endangered_gdb + "\\\\EDW_TESP_2017_Endangered_OccurrenceAll_FoundPlants_ident"
-
-    arcpy.AddMessage("Copying selected records to Endangered Geodatabase ......")
-    arcpy.CopyFeatures_management("lyr", outlocation)
-
-    result = arcpy.GetCount_management(outlocation)
-    count = int(result.getOutput(0))
-    arcpy.AddMessage("Total Number of Endangered Records: " + str(count))
-
-##    __________________________________________________________________________________________________
+    # ===============================================================
+    # ===============================================================
+    # ===============================================================
+    # ===============================================================
 
 
-    # Set local variables
-    inFeatures = intersectFeatureClass
-    outFeatureClass = intersectFeatureClass + "_noFields"
-    dropFields = ["EO_NUMBER", "ACCEPTED_PLANT_CODE", "NRCS_PLANT_CODE","LIFEFORM","DATE_COLLECTED",
-                  "DATE_COLLECTED_MOST_RECENT", "CURRENT_MEASUREMENT", "AREA_OCCUPENCY" ,
-                  "PLANT_COUNT", "PLANT_COUNT_TYPE" , "ECOLOGICAL_TYPE", "COVER_PCT",
-                  "COVER_CLASS_SET_NAME","COVER_CLASS_CODE","SPECIES_LIST_COMPLETENESS","QUALITY_CONTROL",
-                  "LOCATIONAL_UNCERTAINTY","SLOPE","ASPECT_AZIMUTH","ASPECT_CARDINAL","ELEVATION_AVERAGE",
-                  "EXISTING_VEG_CLASS","POTENTIAL_VEG_CLASS","OWNER_NAME","FS_UNIT_NAME","SOURCE_GEOMETRY_TYPE",
-                  "FEATURE_CN","EO_CN","SPATIAL_ID","LAST_UPDATE","PLANT_FOUND","GIS_ACRES","GIS_MILES","EXAMINERS",
-                  "BASICOWNERSHIPID", "OWNERCLASSIFICATION", "GIS_ACRES_1", "REGION", "REGION_1",
-                  "FORESTNAME", "FORESTNAME_1", "FID_USFS_OwnershipLSRS_2017", "ORIG_FID", "AREA_OCCUPANCY",
-                  "COMMON_NAME", "SCIENTIFIC_NAME", "ACCEPTED_COMMON_NAME", "ACCEPTED_SCIENTIFIC_NAME",
-                  "SITE_ID_FS", "FID_EDW_TESP_2017_OccurrenceAll_Found"]
+# nameOfFile = sys.argv[3]
 
-    # Execute CopyFeatures to make a new copy of the feature class
-    # Use CopyRows if you have a table
+local_gdb = in_workspace + "\\Local_Data\\2017_Local_CAALB83.gdb\\"
+local_data = local_gdb + "\\Explode"
 
-    arcpy.CopyFeatures_management(inFeatures, outFeatureClass)
 
-    arcpy.AddMessage("Deleting all unnecessary fields ......")
-    # Execute DeleteField
-    arcpy.DeleteField_management(outFeatureClass, dropFields)
+sr = arcpy.SpatialReference(3310)
 
-    arcpy.AddMessage("Repairing Geometry ......")
-    arcpy.RepairGeometry_management(outFeatureClass)
+if layerType == "Local":
+    arcpy.env.workspace = local_data
+    if arcpy.Exists(local_gdb + "\\Intersect_New"):
+        intersectFeatureDataset = local_gdb + "\\Intersect_New\\"
+    else:
+        arcpy.CreateFeatureDataset_management(local_gdb, "Intersect_New", 3310)
+        intersectFeatureDataset = local_gdb + "\\Intersect_New\\"
+elif layerType == "NOAA_ESU":
+    noaaGdb = in_workspace + "NOAA_ESU\\2017_NOAA_ESU_CAALB83.gdb"
+    arcpy.env.workspace = noaaGdb
+    outFeatClass = noaaGdb
+else:
+    arcpy.env.workspace = in_workspace
 
-    cur = arcpy.UpdateCursor(outFeatureClass)
+arcpy.env.overwriteOutput = True
+
+# The following is used for testing locally. DELETE when done testing.
+# outFeatClass = in_workspace + "\\" + layerType + "\\Critical_Habitat_Polygons_Test_2017_CAALB83_newproj.gdb\Critical_Habitat_Polygons_2017_Occurrence_found_newE_singlepart"
+
+# outFeatClass = in_workspace + "\\" + "Output" + "\\" + layerType + "\\TESP_Test_2017_CAALB83_newproj.gdb\\TESP_2017_original_buffered_single"
+
+# outFeatClass = in_workspace + "\\" + layerType + "\\Wildlife_Sites_Test_2017_CAALB83_newproj.gdb\\Wildlife_Sites_2017_Occurrence_found_newE_singlepart_buffer_spart"
+
+outFeatClass = in_workspace + "\\CondorData_noFOIAnoRelease\\2017_Condor_CAALB83.gdb\\CondorHacking_2015"
+
+
+# outFeatClass = sys.argv[1]
+
+nameOfFile = outFeatClass
+
+nameOfFile = nameOfFile.replace('C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\NOAA_ESU\\2017_NOAA_ESU_CAALB83.gdb\\','')
+arcpy.AddMessage(nameOfFile)
+
+tesvariablelist = ["Endangered", "Threatened", "Sensitive"]
+
+for tes in tesvariablelist:
+
+    newPath = in_workspace + "2017_" + tes
+
+    # Geodatabases for final merge
+    identInterGdb = "2017_" + tes + "_IdentInter_CAALB83.gdb"
+
+    # Geodatabases for FWS Deliverable
+    fraDeliverableGdb = "2017_FRA_" + tes + "_OriginalDataBufferedAndNonBufferedAreas_CAALB83.gdb"
+
+    if arcpy.Exists( newPath + "\\" + identInterGdb):
+        arcpy.AddMessage(tes + " GDB exists")
+    else:
+        arcpy.AddMessage("Creating Geodatabase for " + tes + " Data Deliverables containing intersection data ....")
+        arcpy.CreateFileGDB_management(newPath, identInterGdb)
+        arcpy.CreateFileGDB_management(newPath, fraDeliverableGdb)
+
+
+def get_filename(tes_rank, orig_filename):
+
+    filename = ""
+    if layerType == "TESP":
+        filename = "EDW_TESP_2017_OccurrenceAll_FoundPlants_ident_" + tes_rank
+    elif layerType == "Wildlife_Sites":
+        filename = "EDW_WildlifeSites_2017_ident_" + tes_rank
+    elif layerType == "Wildlife_Observations":
+        filename = "EDW_FishWildlife_Observation_2017_" + tes_rank[:1] + "_ident"
+    elif layerType == "Critical_Habitat_Polygons":
+        filename = "CHabPolyAllSelectedSpecies_2017_nobuf_Ident_" + tes_rank
+    elif layerType == "Critical_Habitat_Lines":
+        filename = "CHabLineAllSelectedSpecies_2017_nobuf_Ident_" + tes_rank
+    elif layerType == "CNDDB":
+        filename = "CNDDB_2017_All_selectsAndShastaCrayfish_Ident_noBDF_" + tes_rank
+    elif layerType == "Condor_Hacking":
+        filename = "CNH_2017_ident"
+    elif layerType == "Condor_Nest":
+        filename = "CN_2017_ident"
+    elif layerType == "Local" or layerType == "NOAA_ESU":
+        filename = fc
+
+    return filename
+
+
+def copy_to_gdb(stage, filename):
+
+    for tes_rank in tesvariablelist:
+        arcpy.AddMessage(" --------------------------------------------------------------- ")
+
+        arcpy.MakeFeatureLayer_management(filename, "tmplyr")
+
+        arcpy.AddMessage("Selecting records based on " + tes_rank + " rank ....")
+        arcpy.SelectLayerByAttribute_management("tmplyr", "NEW_SELECTION", "GRANK_FIRE = '" + tes_rank + "'")
+
+        if stage == "Interim":
+            outlocation = in_workspace + "2017_" + tes_rank + "\\" + "2017_FRA_" + \
+                          tes_rank + "_OriginalDataBufferedAndNonBufferedAreas_CAALB83.gdb" + "\\"
+        else:
+            outlocation = in_workspace + "2017_" + tes_rank + "\\2017_" + tes_rank + "_IdentInter_CAALB83.gdb\\"
+
+        outputfilename = get_filename(tes_rank, filename)
+
+        outlocation += outputfilename
+
+        result = arcpy.GetCount_management("tmplyr")
+        count = int(result.getOutput(0))
+        arcpy.AddMessage("Total Number of Records: " + str(count))
+
+        if count > 0:
+            if stage == "Interim":
+                arcpy.AddMessage("Copying " + layerType + " records to FWS Deliverable Stage " +
+                             tes_rank + " Geodatabase as " + outputfilename)
+            else:
+                arcpy.AddMessage("Copying " + layerType + " records to Final Stage " +
+                             tes_rank + " Geodatabase as " + outputfilename)
+            arcpy.CopyFeatures_management("tmplyr", outlocation)
+        else:
+            arcpy.AddMessage("No records found for rank " + tes_rank)
+
+    arcpy.AddMessage("Complete copying data to " + stage + " staging GDB")
+    arcpy.AddMessage(" ____________________________________________________________________")
+    return
+
+
+def unitid_dissolve(filename):
+    arcpy.AddMessage(" ____________________________________________________________________")
+
+    arcpy.AddMessage("Updating UnitID field from intersection")
+
+    cur = arcpy.UpdateCursor(filename)
 
     field = "UnitID_FS"
+    fieldother = "Type"
+    fieldspecies = "SNAME_FIRE"
+    plant0512num = 0
 
+    # populating UnitID field with UnitID_FS field
     for row in cur:
-        row.UnitID = "0" + row.getValue(field)
+        row.UnitID = "0" + str(row.getValue(field))
         cur.updateRow(row)
+        # Used for deleting all the plant records in San Bernardino for CNDDB
+        if layerType == "CNDDB":
+            if str(row.getValue(field)) == "512" and row.getValue(fieldother) == "PLANT":
+                cur.deleteRow(row)
+                plant0512num += 1
+                arcpy.AddMessage("deleted a row for 0512 Plant: " + row.getValue(fieldspecies))
 
     del cur
 
+    # running export to gdb just for CNDDB dataset others were ran prior to this function
+    if layerType == "CNDDB":
+        arcpy.AddMessage("Total records deleted because they were Plants from San Bernardino : " + str(plant0512num))
+        copy_to_gdb("Interim", filename)
 
+    # if layerType == "CNDDB":
+    #     with arcpy.da.UpdateCursor(intersectFeatureClass, ["Type", "UnitID"]) as cursor:
+    #         for row in cursor:
+    #             if row[0] == "PLANT" and row[1] == "0512":
+    #                 cursor.deleteRow()
+    #                 arcpy.AddMessage("Deleted row")
+
+    arcpy.AddMessage("Repairing Geometry ......")
+    arcpy.RepairGeometry_management(filename)
+
+    arcpy.AddMessage("Dissolving Features")
+
+    dissolveFeatureClass = filename + "_dissolved"
+
+    arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
+                              ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
+                               "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"])
+
+    # arcpy.Dissolve_management(filename, dissolveFeatureClass,
+    #                                 ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
+    #                                  "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"], "", "SINGLE_PART")
+
+    # May delete this once I confirm we don't need BUFF_DIST from Stacey
+    # arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
+    #                                 ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
+    #                                  "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE", "BUFF_DIST"])
+
+    arcpy.AddMessage("Repairing Dissolved Geometry ......")
+    arcpy.RepairGeometry_management(filename)
+    arcpy.AddMessage("Dissolve and Repair complete")
+    arcpy.AddMessage(" ____________________________________________________________________")
+
+    return dissolveFeatureClass
+
+
+try:
+
+    # if layerType == "Local":
+    if layerType == "Local" or layerType == "NOAA_ESU":
+        fcList = arcpy.ListFeatureClasses()
+
+        for fc in fcList:
+            arcpy.AddMessage("  fc: " + fc)
+            if layerType == "NOAA_ESU":
+                if not fc.endswith('_AllHydro'):
+                    continue
+            arcpy.AddMessage("--------------------------------------------------")
+            arcpy.AddMessage("Intersecting " + fc)
+            outFeatClass = fc
+
+            usfsOwnershipFeatureClass = in_workspace + \
+                                        "\\USFS_Ownership_LSRS\\2017_USFS_Ownership_CAALB83.gdb\\USFS_OwnershipLSRS_2017"
+
+            intersectFeature = outFeatClass + "_intersect"
+
+            arcpy.AddMessage("Intersecting with USFS Ownership feature class .....")
+            arcpy.AddMessage("Please be patient while this runs .....")
+
+            if layerType == "Local":
+                intersectFeatureClass = intersectFeatureDataset + "\\" + intersectFeature
+            else:
+                intersectFeatureClass = noaaGdb + "\\" + intersectFeature
+
+            if layerType == "Local":
+                arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
+            else:
+                arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
+
+            arcpy.AddMessage("Completed Intersection")
+
+            copy_to_gdb("Interim", intersectFeatureClass)
+
+            dissolveFC = unitid_dissolve(intersectFeatureClass)
+
+            copy_to_gdb("Final", dissolveFC)
+    else:
+
+        usfsOwnershipFeatureClass = in_workspace + \
+                                    "\\USFS_Ownership_LSRS\\2017_USFS_Ownership_CAALB83.gdb\\USFS_OwnershipLSRS_2017"
+
+        intersectFeatureClass = outFeatClass + "_intersect"
+
+        arcpy.AddMessage("Intersecting with USFS Ownership feature class .....")
+        arcpy.AddMessage("Please be patient while this runs .....")
+
+        # arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
+
+        arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
+
+        arcpy.AddMessage("Completed Intersection")
+
+        # CNDDB layer is skipped here because we need to remove BDF plants prior to exporting GDB
+        if layerType != "CNDDB":
+            # may need to fix the NOAA layer - may remove this and just use the above
+            if layerType == "NOAA_ESU":
+                copy_to_gdb("Interim", nameOfFile)
+            else:
+                copy_to_gdb("Interim", intersectFeatureClass)
+
+        dissolveFC = unitid_dissolve(intersectFeatureClass)
+
+        # may need to fix the NOAA layer - may remove this and just use the above
+        if layerType == "NOAA_ESU":
+            copy_to_gdb("Final", dissolveFC)
+        else:
+            copy_to_gdb("Final", dissolveFC)
+
+    arcpy.AddMessage("Completed Script successfully!!")
 
 except arcpy.ExecuteError:
-    arcpy.GetMessages()
+    arcpy.AddError(arcpy.GetMessages(2))
 except Exception as e:
     arcpy.AddMessage(e)

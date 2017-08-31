@@ -1,8 +1,12 @@
+# ---------------------------------------------------------------------------
 # wo_deliverable.py
 #
 # Description: Creates the final deliverable product for the WO.
 #              This includes generating geodatabases for each forest
 #              that contains only the status and unitID information
+#
+# Runtime estimates: 3 min 17 sec
+#
 # Created by: Josh Klaus 08/17/2017 jklaus@fs.fed.us
 # ---------------------------------------------------------------------------
 
@@ -80,10 +84,12 @@ try:
     tesVariableList = ["Endangered", "Threatened", "Sensitive"]
 
     for forest in forestGDBList:
+        arcpy.AddMessage("-----------------------------------------------------------")
+        arcpy.AddMessage("Populating " + forest)
         for tes in tesVariableList:
             final_fc = final_wksp + "\\" + "FireRetardantEIS_" + tes
             arcpy.MakeFeatureLayer_management(final_fc, "lyr")
-            arcpy.AddMessage("Selecting records based on " + tes + " rank ....")
+            arcpy.AddMessage("Selecting records based on " + tes + " rank")
             unitIDnum = forestGDBDict.get(forest)
             arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION", "UnitID = '" + unitIDnum + "'")
 
@@ -91,7 +97,10 @@ try:
 
             result = arcpy.GetCount_management("lyr")
             count = int(result.getOutput(0))
-            arcpy.AddMessage("Total Number of Records: " + str(count))
+            if count > 0:
+                arcpy.AddMessage("Adding feature class for " + tes + " for forest " + forestGDBDict.get(forest))
+            else:
+                arcpy.AddMessage("There were no records found in " + forestGDBDict.get(forest) + " for " + tes)
 
             if count > 0:
                 arcpy.AddMessage("Copying selected records to " + forest + "  Geodatabase ......")

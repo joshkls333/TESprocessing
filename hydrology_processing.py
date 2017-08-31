@@ -1,7 +1,26 @@
+# ---------------------------------------------------------------------------
 # hydrology_processing.py
 #
-# Description: Selects out, clips, and buffers hydrology layers for Flowlines,
-#              Area, and Waterbody.
+# Description: Pulls three feature classes of data from downloaded Geodatabases on
+#              hydrology: NHDArea, NHDFlowline, and NHD Waterbody. This data will be
+#              pulled from all the SubRegions covering California. The data is then
+#              projected into a GDB as Nad83 CAALB. A select runs on each layer based
+#              on FCode or FType. Fields are added and updated with relevant FRA information.
+#              All of the feature classes from each SubRegion are merged based on type. Note that the
+#              Feature classes for Area and Waterbody and merged together as well.
+#              A Buffer analysis runs on each merged feature class of Area, Flowline, and Waterbody.
+#              The buffered feature class is then intersected with the Land Ownership feature
+#              class to obtain the UnitID. The feature classes are then dissolved to just the
+#              relevant FRA fields added earlier.
+#
+# Arcpy Usage: FeatureClassToShapefile_conversion, Rename_management, Project_management,
+#              FeatureClassToGeodatabase_conversion, MakeFeatureLayer_management, SelectLayerByAttribute_management,
+#              CopyFeatures_management, GetCount_management, AddField_management, UpdateCursor, Merge_management,
+#              Buffer_analysis, RepairGeometery_management, PairwiseIntersect_analysis, PairwiseDissolve_analyis
+#
+# Runtime Estimates: Total time = 6 hr 21 min 7 sec
+#                    Export and projection of original data = 55 min
+#
 # Created by: Josh Klaus 08/24/2017 jklaus@fs.fed.us
 # ---------------------------------------------------------------------------
 
@@ -18,7 +37,7 @@ in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
 arcpy.env.workspace = in_workspace
 arcpy.env.overwriteOutput = True
 
-# using the now variable to assign year everytime there is a hardcoded 2017
+# using the now variable to assign year every time there is a hardcoded 2017
 now = datetime.datetime.today()
 curMonth = str(now.month)
 curYear = str(now.year)
@@ -34,6 +53,7 @@ outputWorkspace = outputDir + "\\" + outputHydroDir + "\\"
 
 hydroFeatureDataset = "\\" + "Hydrography" + "\\"
 
+# Need to rename when done with testing
 projectedGDB = "Hydro_Test_2017_CAALB83_newproj.gdb"
 
 outputProjGDB = outputWorkspace + projectedGDB
@@ -115,6 +135,7 @@ try:
 
                 newShapefile = waterFeature + "_" + region
 
+                # Rename files to add Subregion to name to distinguish different feature classes as loop runs
                 arcpy.Rename_management(outputWorkspace + waterFeature + ".shp", newShapefile)
 
                 inProjShapefile = outputWorkspace + newShapefile + ".shp"
@@ -146,10 +167,9 @@ try:
                 elif waterFeature == nhdAreaFC:
                     selectQuery = "( FCode = 46003 OR FCode = 46006 )"
 
-                arcpy.AddMessage("Selecting featues based on following Select Query: " + selectQuery)
+                arcpy.AddMessage("Selecting features based on following Select Query: " + selectQuery)
                 arcpy.MakeFeatureLayer_management(inSelectFC, "lyr" )
 
-                arcpy.AddMessage("Selecting records based on selection ..")
                 arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION", selectQuery )
 
                 arcpy.AddMessage("Copying selected records to new feature ......")

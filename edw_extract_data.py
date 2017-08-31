@@ -1,6 +1,17 @@
+# ---------------------------------------------------------------------------
 # edw_extract_data.py
 #
-# Description: Selects and extracts data from edw
+# Description: Selects and extracts data from EDW for 4 feature classes:
+#              TESP, FishWildlife_Observation, WildlifeSites, BasicOwnership
+#              Selects all data for Region 5 with first three and includes TBMU
+#              for Ownership feature class. Stores all data in a geodatabase in
+#              a folder stored on the workspace provided. Suggest the workspace
+#              for the user on the T drive. After that it can be copied to local
+#              C drive output directory for usage in next steps. Note the Land
+#              Ownership layer uses a dictionary to add the UnitID field and populate
+#              it according to the FORESTNAME field.
+#
+# Runtime Estimates: 17 min 46 sec on Citrix.
 #
 # Created by: Josh Klaus 08/30/2017 jklaus@fs.fed.us
 # ---------------------------------------------------------------------------
@@ -77,8 +88,7 @@ if not os.path.exists(newPath):
 
 newWorkSpace = newPath + "\\" + edwGDB + "\\"
 
-# edwList = ["TESP", "Wild_Obs", "Wild_Sites", "Land"]
-edwList = ["Land"]
+edwList = ["TESP", "Wild_Obs", "Wild_Sites", "Land"]
 
 try:
     for edwData in edwList:
@@ -129,7 +139,6 @@ try:
                 cur.updateRow(row)
 
             del cur
-
 
 
 except arcpy.ExecuteError:

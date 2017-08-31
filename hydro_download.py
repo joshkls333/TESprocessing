@@ -1,7 +1,15 @@
-# hydrology_processing.py
+# ---------------------------------------------------------------------------
+# hydro_download.py
 #
-# Description: Selects out, clips, and buffers hydrology layers for Flowlines,
-#              Area, and Waterbody.
+# Description: Downloads all data for hydrology processing from USGS. Unzips data
+#              and stores it in an Download folder in the workspace folder used. Also
+#              performs download and unzip of all ESU data from NOAA. Completes external
+#              download and unzip of data by pulling critical habitat data form FWS.
+#              Note: usage is limited to ArcGIS 10.x because of Python version issues with Pro.
+#                    Due to the usage of urllib module. Will need to change for Pro.
+#
+# Runtime Estimates: 13 min 10 sec
+#
 # Created by: Josh Klaus 08/24/2017 jklaus@fs.fed.us
 # ---------------------------------------------------------------------------
 
@@ -11,17 +19,11 @@ import sys
 import os
 import datetime
 import urllib
-import urllib2
 import zipfile
 
 # Set workspace or obtain from user input
 in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
 # in_workspace = sys.argv[1]
-
-#Still Need to figure out how to pull SDE layers:
-dataTESP = r"T:\FS\Reference\GeoTool\agency\DatabaseConnection\edw_sde_default_as_myself.sde\S_USA.TESP\S_USA.TESP_OccurrenceAll"
-
-dataFW = r"T:\FS\Reference\GeoTool\agency\DatabaseConnection\edw_sde_default_as_myself.sde\S_USA.Fish_and_Wildlife"
 
 arcpy.env.workspace = in_workspace
 arcpy.env.overwriteOutput = True
@@ -46,6 +48,9 @@ for folder in downloadFolders:
         os.makedirs(downloadPath + "\\" + folder)
 
 try:
+    arcpy.AddMessage("_____________________________________________________")
+    arcpy.AddMessage("Downloading and unzipping all NHD data from USGS ftp site")
+
     for region in subRegionList:
 
         filename = "NHD_H_" + region + "_GDB.zip"
@@ -64,6 +69,9 @@ try:
         zip_ref = zipfile.ZipFile(downloadFile, 'r')
         zip_ref.extractall(hydroDownloadPath)
         zip_ref.close()
+
+    arcpy.AddMessage("_____________________________________________________")
+    arcpy.AddMessage("Downloading and unzipping all ESU data from NOAA website")
 
     for salmon in salmonList:
 
@@ -84,6 +92,8 @@ try:
         zip_ref.extractall(noaaDownloadPath)
         zip_ref.close()
 
+    arcpy.AddMessage("_____________________________________________________")
+    arcpy.AddMessage("Downloading and unzipping all Critical Habitat data from FWS website")
     filename = "crithab_all_layers.zip"
 
     chabDownloadPath = downloadPath + "\\" + "CHab"
