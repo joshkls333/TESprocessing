@@ -44,7 +44,9 @@ local_data = local_gdb + "\\Explode"
 
 # layerType = "NOAA_ESU"
 
-layerType = sys.argv[2]
+layerType = "CNDDB"
+
+# layerType = sys.argv[2]
 
 # nameOfFile = sys.argv[3]
 
@@ -167,7 +169,6 @@ def copy_to_gdb(stage, filename):
     arcpy.AddMessage(" ____________________________________________________________________")
     return
 
-
 def unitid_dissolve(filename):
     arcpy.AddMessage(" ____________________________________________________________________")
 
@@ -176,9 +177,29 @@ def unitid_dissolve(filename):
     cur = arcpy.UpdateCursor(filename)
 
     field = "UnitID_FS"
+    fieldrank = "GRANK_FIRE"
+    fieldforest = "FORESTNAME"
     fieldother = "Type"
     fieldspecies = "SNAME_FIRE"
     plant0512num = 0
+    ranaboyliinum = 0
+
+    csvfile = in_workspace + "\\csv_tables\CNDDB_SummaryTable.csv"
+
+    arcpy.AddMessage("csv File: " + csvfile)
+    arcpy.AddMessage("NOTE: Code will operate differently for csv in Pro vs 10.x!!!!!")
+    arcpy.AddMessage("Version of Python: " + sys.version)
+
+    if sys.version_info[0] < 3:
+        # uncomment when using arcgis 10.3
+        with open(csvfile, 'rb') as f:
+            reader = csv.reader(f)
+            selectionList = list(reader)
+    else:
+        # use when using arcgis pro
+        with open(csvfile) as f:
+            reader = csv.reader(f)
+            selectionList = list(reader)
 
     # populating UnitID field with UnitID_FS field
     for row in cur:
@@ -186,24 +207,43 @@ def unitid_dissolve(filename):
         cur.updateRow(row)
         # Used for deleting all the plant records in San Bernardino for CNDDB
         if layerType == "CNDDB":
-            if str(row.getValue(field)) == "512" and row.getValue(fieldother) == "PLANT":
+            if str(row.getValue(field)) == "512" \
+                    and row.getValue(fieldrank) != "Sensitive" \
+                    and row.getValue(fieldother) == "PLANT":
                 cur.deleteRow(row)
                 plant0512num += 1
                 arcpy.AddMessage("deleted a row for 0512 Plant: " + row.getValue(fieldspecies))
+            elif str(row.getValue(field)) != "507" \
+                    and str(row.getValue(field)) != "513" \
+                    and str(row.getValue(field)) != "515" \
+                    and row.getValue(fieldspecies) == "Rana boylii":
+                cur.deleteRow(row)
+                ranaboyliinum += 1
+                arcpy.AddMessage("deleted a row for Rana boylii in forest: " + row.getValue(fieldforest))
+            # elif str(row.getValue(field)) == "507" \
+            #         and str(row.getValue(field)) == "513" \
+            #         and str(row.getValue(field)) == "515" \
+            #         and row.getValue(fieldspecies) == "Rana muscosa":
+            #     cur.deleteRow(row)
+            #     ranaboyliinum += 1
+            #     arcpy.AddMessage("deleted a row for Rana muscosa in forest: " + row.getValue(fieldforest))
+            else:
+                for item in selectionList:
+                    if item[0].startswith(fieldspecies):
+                        if item[3] == "":
+                            break
+                        elif item[3] != row.getValue(fieldforest).upper():
+                            cur.deleteRow(row)
+                            arcpy.AddMessage("deleted row for " + row.getValue(fieldspecies) +
+                                             " because not in " + row.getValue(fieldforest))
 
     del cur
 
     # running export to gdb just for CNDDB dataset others were ran prior to this function
     if layerType == "CNDDB":
         arcpy.AddMessage("Total records deleted because they were Plants from San Bernardino : " + str(plant0512num))
+        arcpy.AddMessage("Total records deleted because they were Rana boylii not in target forests : " + str(ranaboyliinum))
         copy_to_gdb("Interim", filename)
-
-    # if layerType == "CNDDB":
-    #     with arcpy.da.UpdateCursor(intersectFeatureClass, ["Type", "UnitID"]) as cursor:
-    #         for row in cursor:
-    #             if row[0] == "PLANT" and row[1] == "0512":
-    #                 cursor.deleteRow()
-    #                 arcpy.AddMessage("Deleted row")
 
     arcpy.AddMessage("Repairing Geometry ......")
     arcpy.RepairGeometry_management(filename)
@@ -212,13 +252,15 @@ def unitid_dissolve(filename):
 
     dissolveFeatureClass = filename + "_dissolved"
 
-    arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
+    if sys.version_info[0] < 3:
+        arcpy.Dissolve_management(filename, dissolveFeatureClass,
+                                        ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
+                                         "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"], "", "SINGLE_PART")
+    else:
+        arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
                               ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
                                "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"])
 
-    # arcpy.Dissolve_management(filename, dissolveFeatureClass,
-    #                                 ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
-    #                                  "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"], "", "SINGLE_PART")
 
     # May delete this once I confirm we don't need BUFF_DIST from Stacey
     # arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
@@ -264,7 +306,12 @@ try:
             if layerType == "Local":
                 arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
             else:
-                arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
+                if sys.version_info[0] < 3:
+                    arcpy.AddMessage("Python version of ArcGIS 10.x requires Intersect_analysis.")
+                    arcpy.AddMessage("Switch to ArcGIS Pro to use Pairwise Intersection and reduce runtime.")
+                    arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
+                else:
+                    arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
 
             arcpy.AddMessage("Completed Intersection")
 
@@ -283,27 +330,30 @@ try:
         arcpy.AddMessage("Intersecting with USFS Ownership feature class .....")
         arcpy.AddMessage("Please be patient while this runs .....")
 
-        # arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
-
-        arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
+        if sys.version_info[0] < 3:
+            arcpy.AddMessage("Python version of ArcGIS 10.x requires Intersect_analysis.")
+            arcpy.AddMessage("Switch to ArcGIS Pro to use Pairwise Intersection and reduce runtime.")
+            arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
+        else:
+            arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
 
         arcpy.AddMessage("Completed Intersection")
 
         # CNDDB layer is skipped here because we need to remove BDF plants prior to exporting GDB
         if layerType != "CNDDB":
-            # may need to fix the NOAA layer - may remove this and just use the above
-            if layerType == "NOAA_ESU":
-                copy_to_gdb("Interim", nameOfFile)
-            else:
-                copy_to_gdb("Interim", intersectFeatureClass)
+            # # may need to fix the NOAA layer - may remove this and just use the above
+            # if layerType == "NOAA_ESU":
+            #     copy_to_gdb("Interim", nameOfFile)
+            # else:
+            copy_to_gdb("Interim", intersectFeatureClass)
 
         dissolveFC = unitid_dissolve(intersectFeatureClass)
 
-        # may need to fix the NOAA layer - may remove this and just use the above
-        if layerType == "NOAA_ESU":
-            copy_to_gdb("Final", dissolveFC)
-        else:
-            copy_to_gdb("Final", dissolveFC)
+        # # may need to fix the NOAA layer - may remove this and just use the above
+        # if layerType == "NOAA_ESU":
+        #     copy_to_gdb("Final", dissolveFC)
+        # else:
+        copy_to_gdb("Final", dissolveFC)
 
     arcpy.AddMessage("Completed Script successfully!!")
 

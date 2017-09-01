@@ -10,7 +10,7 @@
 #              and performs an explode and repair. Next steps will be done with
 #              pairwise_intersection script.
 #
-# Runtime Estimates: 1 hr 25 min 57 sec
+# Runtime Estimates: 1 hr 28 min 24 sec
 #
 # Created by: Josh Klaus 08/25/2017 jklaus@fs.fed.us
 # ---------------------------------------------------------------------------
@@ -41,6 +41,36 @@ esuSpeciesList = ["CKCAC", "CKCVF", "CKCVS", "CKSAC",
                   "STCCV", "STNCA", "STSCC", "STSCA", "COSNC"]
 
 # esuSpeciesList = ["COSNC"]
+
+esuSpeciesNameDict = {"CKCAC": "Oncorhynchus tshawytscha",
+                      "CKCVF": "Oncorhynchus tshawytscha",
+                      "CKCVS": "Oncorhynchus tshawytscha",
+                      "CKSAC": "Oncorhynchus tshawytscha",
+                      "STCCV": "Oncorhynchus mykiss",
+                      "STNCA": "Oncorhynchus mykiss",
+                      "STSCC": "Oncorhynchus mykiss",
+                      "STSCA": "Oncorhynchus mykiss",
+                      "COSNC": "Oncorhynchus kisutch"}
+
+esuCommonNameDict = {"CKCAC": "California Coastal Chinook Salmon",
+                     "CKCVF": "Central Valley Fall and Late Fall-run Chinook Salmon",
+                     "CKCVS": "Central Valley Spring-run Chinook Salmon",
+                     "CKSAC": "Sacramento River Winter-run Chinook Salmon",
+                     "STCCV": "California Central Valley Steelhead",
+                     "STNCA": "Northern California Steelhead",
+                     "STSCC": "South-Central California Steelhead",
+                     "STSCA": "Southern California Steelhead",
+                     "COSNC": "Southern Oregon/Northern California Coasts Coho Salmon"}
+
+esuFilenameDict = {"CKCAC": "CKCAC_Chinook_CalifCoastal",
+                   "CKCVF": "CKCVF_Chinook__CentralValleyLateFallRun",
+                   "CKCVS": "CKCVS_Chinook__CentralValleySpringRun",
+                   "CKSAC": "CKSAC_Chinook__SacRiverWinterRun",
+                   "STCCV": "STCCV_Steelhead_CalifCentralValley",
+                   "STNCA": "STNCA_Steelhead_NorthCalif",
+                   "STSCC": "STSCC_Steelhead_SouthCentralCalif",
+                   "STSCA": "STSCA_Steelhead_SouthernCalif",
+                   "COSNC": "COSNC_Coho_SouthOregNorthCalifCoasts"}
 
 # this workspace may change to output workspace from hydrology_processing.py
 noaaWorkspace = in_workspace + "\\NOAA_ESU\\"
@@ -151,9 +181,8 @@ try:
 
         for row in cur:
             row.SOURCEFIRE = "NHD Subbasins " + curMonth + " " + curYear + " within ESU"
-            # Need to fix the following - possibly use a dictionary
-            row.SNAME_FIRE = species
-            row.CNAME_FIRE = species
+            row.SNAME_FIRE = esuSpeciesNameDict.get(species)
+            row.CNAME_FIRE = esuCommonNameDict.get(species)
             row.CMNT_FIRE = "NHD Flowlines and Waterbodies used within accessible ESU"
             row.BUFFT_FIRE = "300"
             row.BUFFM_FIRE = 91.44
@@ -162,17 +191,21 @@ try:
 
         del cur
 
+        fullNameFC = newProjectWorkSpace + esuFilenameDict.get(species)
+
+        arcpy.Rename_management(selectFC, fullNameFC)
+
         arcpy.AddMessage("Clipping to Flowline data")
-        outFlowClipFC = selectFC + "_Flowline"
-        arcpy.Clip_analysis(selectFC, flowClipFeatClass, outFlowClipFC)
+        outFlowClipFC = fullNameFC + "_Flowline"
+        arcpy.Clip_analysis(fullNameFC, flowClipFeatClass, outFlowClipFC)
 
         # this may need to change to a different feature class - check naming conventions
         arcpy.AddMessage("Clipping to Waterbody data")
-        outBodyClipFC = selectFC + "_Waterbody"
-        arcpy.Clip_analysis(selectFC, bodyClipFeatClass, outBodyClipFC)
+        outBodyClipFC = fullNameFC + "_Waterbody"
+        arcpy.Clip_analysis(fullNameFC, bodyClipFeatClass, outBodyClipFC)
 
         arcpy.AddMessage("Merging both clipped Feature classes")
-        mergeFC = selectFC + "_AllHydro"
+        mergeFC = fullNameFC + "_AllHydro"
         arcpy.Merge_management([outFlowClipFC, outBodyClipFC], mergeFC)
 
         singlePartFeatureClass = mergeFC + "_singlepart"

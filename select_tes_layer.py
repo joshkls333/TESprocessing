@@ -68,9 +68,9 @@ for tes in tesvariablelist:
 #  Please note the following selections of inTable and csv are file dependent
 # --------------------------------------------------------------------------------
 
-layerType = sys.argv[4]
+# layerType = sys.argv[4]
 
-# layerType = "CNDDB"
+layerType = "CNDDB"
 
 outputDir = in_workspace + "\\" + "Output"
 if not os.path.exists(outputDir):
@@ -174,16 +174,19 @@ elif layerType == "CNDDB":
     csvFile += "\\CNDDB_SummaryTable.csv"
 
 arcpy.AddMessage("csv File: " + csvFile)
+arcpy.AddMessage("NOTE: Code will operate differently for csv in Pro vs 10.x!!!!!")
+arcpy.AddMessage("Version of Python: " + sys.version)
 
-# uncomment when using arcgis 10.3
-# with open(csvFile, 'rb') as f:
-#     reader = csv.reader(f)
-#     selectionList = list(reader)
-
-# use when using arcgis pro
-with open(csvFile) as f:
-    reader = csv.reader(f)
-    selectionList = list(reader)
+if sys.version_info[0] < 3:
+    # uncomment when using arcgis 10.3
+    with open(csvFile, 'rb') as f:
+        reader = csv.reader(f)
+        selectionList = list(reader)
+else:
+    # use when using arcgis pro
+    with open(csvFile) as f:
+        reader = csv.reader(f)
+        selectionList = list(reader)
 
 arcpy.AddMessage("Listing of csv table data: ")
 for item in selectionList:
@@ -346,20 +349,27 @@ try:
                     if accuracy == "1/10 mile":
                         if item[2] == "300":
                             bufferAmount = 3
+                            row.INST_FIRE = "CNDDB ACCURACY is GT 300 ft buffer - minimum 3 ft buffer applied"
                         elif item[2] == "600":
                             bufferAmount = 72
+                            row.INST_FIRE = "CNDDB ACCURACY is 529 ft - 72 ft buffer applied to meet 600 ft requirement"
                     elif accuracy == "1/5 mile":
                         if item[2] == "300":
                             bufferAmount = 3
+                            row.INST_FIRE = "CNDDB ACCURACY is GT 300 ft buffer - minimum 3 ft buffer applied"
                         elif item[2] == "600":
                             bufferAmount = 3
+                            row.INST_FIRE = "CNDDB ACCURACY is GT 600 ft buffer - minimum 3 ft buffer applied"
                     elif accuracy == "80 meters":
                         if item[2] == "300":
                             bufferAmount = 38
+                            row.INST_FIRE = "CNDDB ACCURACY is LT 300 ft buffer - adding 38 ft"
                         elif item[2] == "600":
                             bufferAmount = 338
+                            row.INST_FIRE = "CNDDB ACCURACY is 262 ft - 338 ft buffer applied to meet 600 ft"
                     elif accuracy == "specific area":
                         bufferAmount = int(item[2])
+                        row.INST_FIRE = "CNDDB ACCURACY is specific - adding " + item[2] + " ft buffer"
                     else:
                         bufferAmount = 2
 
@@ -399,7 +409,7 @@ try:
                     bufferAmount = int(item[2])
                     break
 
-                elif item[0].startswith(speciesrow)  and item[3] == forestrow:
+                elif item[0].startswith(speciesrow) and item[3] == forestrow:
                     row.GRANK_FIRE = item[1]
                     bufferAmount = int(item[2])
                     break
@@ -550,6 +560,8 @@ try:
         arcpy.AddMessage("Repairing Geometry of merged layer")
         arcpy.RepairGeometry_management(singlePartBufferedFC)
 
+    if layerType == "Wildlife_Observations":
+        arcpy.AddMessage("Ensure the removal of Acipenser mediosteris from SRF due to bad data!!!!")
     arcpy.AddMessage("Script complete ... check data and make changes ... then proceed to intersection")
 
     # -----------------------------------------------------------------------------------
