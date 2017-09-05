@@ -432,6 +432,7 @@ try:
 
             cur.updateRow(row)
 
+
         del cur
 
     arcpy.AddMessage("Number of Endangered = " + str(endangerNum))
@@ -440,9 +441,6 @@ try:
     arcpy.AddMessage("Number of Other = " + str(otherNum))
 
     arcpy.AddMessage("Splitting current state of data into deliverable Geodatabases .....")
-
-#    does not work in ArcGIS only ArcGIS Pro
-#    arcpy.SplitByAttributes_analysis(selectFC, sensitive_gdb, "GRANK_FIRE")
 
     tesRankList = ["Endangered", "Threatened", "Sensitive"]
 
@@ -513,7 +511,7 @@ try:
         arcpy.AddMessage("Repairing Geometry of singlepart buffer layer ......")
         arcpy.RepairGeometry_management(singlePartBufferedFC)
 
-    if layerType == "CNDDB":
+    elif layerType == "CNDDB":
 
         arcpy.AddMessage("Moving Shasta Crayfish files into Geodatabase")
         # May need to change where this is being pulled
@@ -561,15 +559,8 @@ try:
         arcpy.RepairGeometry_management(singlePartBufferedFC)
 
     if layerType == "Wildlife_Observations":
-        arcpy.AddMessage("Ensure the removal of Acipenser mediosteris from SRF due to bad data!!!!")
+        arcpy.AddMessage("Ensure the removal of Acipenser medirostris from SRF due to bad data!!!!")
     arcpy.AddMessage("Script complete ... check data and make changes ... then proceed to intersection")
-
-    # -----------------------------------------------------------------------------------
-    #  Note this process will be run in another script within an
-    #  ArcGIS Pro environment using PairwiseIntersect_analysis
-    # -----------------------------------------------------------------------------------
-    # arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
-    # arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
 
 except arcpy.ExecuteError:
     arcpy.AddError(arcpy.GetMessages(2))

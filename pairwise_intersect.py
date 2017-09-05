@@ -32,7 +32,7 @@ import arcpy
 import sys
 import csv
 
-# in_workspace = sys.argv[1]
+in_workspace = sys.argv[1]
 
 in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
 local_gdb = in_workspace + "\\Local_Data\\2017_Local_CAALB83.gdb\\"
@@ -44,11 +44,9 @@ local_data = local_gdb + "\\Explode"
 
 # layerType = "NOAA_ESU"
 
-layerType = "CNDDB"
+# layerType = "CNDDB"
 
-# layerType = sys.argv[2]
-
-# nameOfFile = sys.argv[3]
+layerType = sys.argv[3]
 
 sr = arcpy.SpatialReference(3310)
 
@@ -77,8 +75,9 @@ arcpy.env.overwriteOutput = True
 
 # outFeatClass = in_workspace + "\\CondorData_noFOIAnoRelease\\2017_Condor_CAALB83.gdb\\CondorHacking_2015"
 
+# outFeatClass = in_workspace + "\\Output\\CNDDB\\CNDDB_Test_2017_CAALB83_newproj.gdb\\CNDDB_2017_original_merge"
 
-outFeatClass = sys.argv[1]
+outFeatClass = sys.argv[2]
 
 nameOfFile = outFeatClass
 
@@ -203,39 +202,59 @@ def unitid_dissolve(filename):
 
     # populating UnitID field with UnitID_FS field
     for row in cur:
+        speciesname = row.getValue(fieldspecies)
+        forestname = row.getValue(fieldforest)
         row.UnitID = "0" + str(row.getValue(field))
         cur.updateRow(row)
-        # Used for deleting all the plant records in San Bernardino for CNDDB
-        if layerType == "CNDDB":
+        if layerType == "Wildlife_Observations":
+            if speciesname == "Oncorhynchus kisutch" \
+                    and str(row.getValue(field)) == "516":
+                cur.deleteRow(row)
+                arcpy.AddMessage(
+                    "Deleting row for Oncorhynchus kisutch because forest not protected, found in " + forestname)
+        elif layerType == "Critical_Habitat_Polygons":
+            if speciesname == "Rana muscosa" \
+                    and str(row.getValue(field)) != "501" \
+                    and str(row.getValue(field)) != "512" \
+                    and str(row.getValue(field)) != "502" \
+                    and str(row.getValue(field)) != "507":
+                cur.deleteRow(row)
+                arcpy.AddMessage(
+                    "Deleting row for Rana muscosa because not Southern forest species, found in " + forestname)
+        # Used for filtering out records in CNDDB
+        elif layerType == "CNDDB":
+            # Used for deleting all the plant records in San Bernardino for CNDDB
             if str(row.getValue(field)) == "512" \
                     and row.getValue(fieldrank) != "Sensitive" \
                     and row.getValue(fieldother) == "PLANT":
                 cur.deleteRow(row)
                 plant0512num += 1
-                arcpy.AddMessage("deleted a row for 0512 Plant: " + row.getValue(fieldspecies))
+                arcpy.AddMessage("deleted a row for 0512 Plant: " + speciesname)
+            # Used for deleting all the Rana boylii not in the following three forests
             elif str(row.getValue(field)) != "507" \
                     and str(row.getValue(field)) != "513" \
                     and str(row.getValue(field)) != "515" \
-                    and row.getValue(fieldspecies) == "Rana boylii":
+                    and speciesname == "Rana boylii":
                 cur.deleteRow(row)
                 ranaboyliinum += 1
-                arcpy.AddMessage("deleted a row for Rana boylii in forest: " + row.getValue(fieldforest))
-            # elif str(row.getValue(field)) == "507" \
-            #         and str(row.getValue(field)) == "513" \
-            #         and str(row.getValue(field)) == "515" \
-            #         and row.getValue(fieldspecies) == "Rana muscosa":
+                arcpy.AddMessage("deleted a row for Rana boylii in forest: " + forestname)
+            # elif (str(row.getValue(field)) == "508" \
+            #         or str(row.getValue(field)) == "514" \
+            #         or str(row.getValue(field)) == "510" \
+            #         or str(row.getValue(field)) == "505") \
+            #         and speciesname == "Rana muscosa":
             #     cur.deleteRow(row)
-            #     ranaboyliinum += 1
-            #     arcpy.AddMessage("deleted a row for Rana muscosa in forest: " + row.getValue(fieldforest))
+            #     arcpy.AddMessage("deleted a row for Rana muscosa in forest: " + forestname)
             else:
+                # Used for deleting all the species selected not in a particular forest
                 for item in selectionList:
-                    if item[0].startswith(fieldspecies):
+                    if item[0].startswith(speciesname) and speciesname != "Rana boylii" and speciesname != "Rana muscosa":
                         if item[3] == "":
                             break
-                        elif item[3] != row.getValue(fieldforest).upper():
+                        elif item[3] != forestname.upper():
                             cur.deleteRow(row)
-                            arcpy.AddMessage("deleted row for " + row.getValue(fieldspecies) +
-                                             " because not in " + row.getValue(fieldforest))
+                            arcpy.AddMessage("deleted row for " + speciesname +
+                                             " because found in " + forestname)
 
     del cur
 

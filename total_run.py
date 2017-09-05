@@ -1,3 +1,9 @@
+# ---------------------------------------------------------------------------
+# total_run.py
+#
+# Description: Combines the select_tes_layer.py and pairwise_intersection.py
+#              programs so a user could run the 5 select layers in one run.
+# ---------------------------------------------------------------------------
 # select_tes_layer.py
 #
 # Description: Using original data it projects data to an output geodatabase in
@@ -16,6 +22,34 @@
 # Runtime Estimates:
 #
 # Created by: Josh Klaus 07/27/2017 jklaus@fs.fed.us
+# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# pairwise_intersect.py
+#
+# Usage: PairwiseIntersect_analysis
+# Description: Performs an Intersect_analysis with pairwise processing that only
+#              runs in ArcGIS Pro. After the intersection data is exported to FWS GDB.
+#              UnitID field is populated based on intersection and a Dissolve is performed
+#              to dissolve data and remove extraneous fields. Data is exported to Final
+#              GDB.
+#              Note: User selects final file from preprocessing for all datasets except Local
+#                     and NOAA. Those two datasets will generate a list of feature classes and
+#                     loop through them running intersection and export processes.
+#
+# Runtime Estimates: NOAA       : 29 min 52 sec
+#                    Local      : 16 min 20 sec
+#                    TESP       :  1 min  2 sec
+#                    Wild Sites :        33 sec
+#                    Wild Obs E :  2 min 16 sec
+#                    Wild Obs T :  1 min  4 sec
+#                    Wild obs S :        22 sec
+#                    CHab Poly  :        26 sec
+#                    Chab Line  :        11 sec
+#                    CNDDB      :        48 sec
+#                    Cond Nest  :        18 sec
+#                    Cond Hack  :        16 sec
+#
+# Created by: Josh Klaus 08/01/2017 jklaus@fs.fed.us
 # ---------------------------------------------------------------------------
 
 # Import arcpy module
@@ -546,33 +580,13 @@ try:
 
     arcpy.AddMessage("Script complete ... check data and make changes ... then proceed to intersection")
 
-    # -----------------------------------------------------------------------------------
-    #  Note this process will be run in another script within an
-    #  ArcGIS Pro environment using PairwiseIntersect_analysis
-    # -----------------------------------------------------------------------------------
-    # arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
-    # arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
-
-except arcpy.ExecuteError:
-    arcpy.AddError(arcpy.GetMessages(2))
-except Exception as e:
-    arcpy.AddMessage(e)
-
-  # Figure out a way to merge the Above section of Code with the Below section of Code
-
-    # ===============================================================
-    # ===============================================================
-    # ===============================================================
-    # ===============================================================
+    local_gdb = in_workspace + "\\Local_Data\\2017_Local_CAALB83.gdb\\"
+    local_data = local_gdb + "\\Explode"
 
 
 # nameOfFile = sys.argv[3]
 
-local_gdb = in_workspace + "\\Local_Data\\2017_Local_CAALB83.gdb\\"
-local_data = local_gdb + "\\Explode"
-
-
-sr = arcpy.SpatialReference(3310)
+    sr = arcpy.SpatialReference(3310)
 
 if layerType == "Local":
     arcpy.env.workspace = local_data
@@ -597,10 +611,11 @@ arcpy.env.overwriteOutput = True
 
 # outFeatClass = in_workspace + "\\" + layerType + "\\Wildlife_Sites_Test_2017_CAALB83_newproj.gdb\\Wildlife_Sites_2017_Occurrence_found_newE_singlepart_buffer_spart"
 
-outFeatClass = in_workspace + "\\CondorData_noFOIAnoRelease\\2017_Condor_CAALB83.gdb\\CondorHacking_2015"
+# outFeatClass = in_workspace + "\\CondorData_noFOIAnoRelease\\2017_Condor_CAALB83.gdb\\CondorHacking_2015"
 
+# outFeatClass = in_workspace + "\\Output\\CNDDB\\CNDDB_Test_2017_CAALB83_newproj.gdb\\CNDDB_2017_original_merge"
 
-# outFeatClass = sys.argv[1]
+outFeatClass = sys.argv[1]
 
 nameOfFile = outFeatClass
 
@@ -691,7 +706,6 @@ def copy_to_gdb(stage, filename):
     arcpy.AddMessage(" ____________________________________________________________________")
     return
 
-
 def unitid_dissolve(filename):
     arcpy.AddMessage(" ____________________________________________________________________")
 
@@ -700,34 +714,93 @@ def unitid_dissolve(filename):
     cur = arcpy.UpdateCursor(filename)
 
     field = "UnitID_FS"
+    fieldrank = "GRANK_FIRE"
+    fieldforest = "FORESTNAME"
     fieldother = "Type"
     fieldspecies = "SNAME_FIRE"
     plant0512num = 0
+    ranaboyliinum = 0
+
+    csvfile = in_workspace + "\\csv_tables\CNDDB_SummaryTable.csv"
+
+    arcpy.AddMessage("csv File: " + csvfile)
+    arcpy.AddMessage("NOTE: Code will operate differently for csv in Pro vs 10.x!!!!!")
+    arcpy.AddMessage("Version of Python: " + sys.version)
+
+    if sys.version_info[0] < 3:
+        # uncomment when using arcgis 10.3
+        with open(csvfile, 'rb') as f:
+            reader = csv.reader(f)
+            selectionList = list(reader)
+    else:
+        # use when using arcgis pro
+        with open(csvfile) as f:
+            reader = csv.reader(f)
+            selectionList = list(reader)
 
     # populating UnitID field with UnitID_FS field
     for row in cur:
+        speciesname = row.getValue(fieldspecies)
+        forestname = row.getValue(fieldforest)
         row.UnitID = "0" + str(row.getValue(field))
         cur.updateRow(row)
-        # Used for deleting all the plant records in San Bernardino for CNDDB
-        if layerType == "CNDDB":
-            if str(row.getValue(field)) == "512" and row.getValue(fieldother) == "PLANT":
+        if layerType == "Wildlife_Observations":
+            if speciesname == "Oncorhynchus kisutch" \
+                    and str(row.getValue(field)) == "516":
+                cur.deleteRow(row)
+                arcpy.AddMessage(
+                    "Deleting row for Oncorhynchus kisutch because forest not protected, found in " + forestname)
+        elif layerType == "Critical_Habitat_Polygons":
+            if speciesname == "Rana muscosa" \
+                    and str(row.getValue(field)) != "501" \
+                    and str(row.getValue(field)) != "512" \
+                    and str(row.getValue(field)) != "502" \
+                    and str(row.getValue(field)) != "507":
+                cur.deleteRow(row)
+                arcpy.AddMessage(
+                    "Deleting row for Rana muscosa because not Southern forest species, found in " + forestname)
+        # Used for filtering out records in CNDDB
+        elif layerType == "CNDDB":
+            # Used for deleting all the plant records in San Bernardino for CNDDB
+            if str(row.getValue(field)) == "512" \
+                    and row.getValue(fieldrank) != "Sensitive" \
+                    and row.getValue(fieldother) == "PLANT":
                 cur.deleteRow(row)
                 plant0512num += 1
-                arcpy.AddMessage("deleted a row for 0512 Plant: " + row.getValue(fieldspecies))
+                arcpy.AddMessage("deleted a row for 0512 Plant: " + speciesname)
+            # Used for deleting all the Rana boylii not in the following three forests
+            elif str(row.getValue(field)) != "507" \
+                    and str(row.getValue(field)) != "513" \
+                    and str(row.getValue(field)) != "515" \
+                    and speciesname == "Rana boylii":
+                cur.deleteRow(row)
+                ranaboyliinum += 1
+                arcpy.AddMessage("deleted a row for Rana boylii in forest: " + forestname)
+            # elif (str(row.getValue(field)) == "508" \
+            #         or str(row.getValue(field)) == "514" \
+            #         or str(row.getValue(field)) == "510" \
+            #         or str(row.getValue(field)) == "505") \
+            #         and speciesname == "Rana muscosa":
+            #     cur.deleteRow(row)
+            #     arcpy.AddMessage("deleted a row for Rana muscosa in forest: " + forestname)
+            else:
+                # Used for deleting all the species selected not in a particular forest
+                for item in selectionList:
+                    if item[0].startswith(speciesname) and speciesname != "Rana boylii" and speciesname != "Rana muscosa":
+                        if item[3] == "":
+                            break
+                        elif item[3] != forestname.upper():
+                            cur.deleteRow(row)
+                            arcpy.AddMessage("deleted row for " + speciesname +
+                                             " because found in " + forestname)
 
     del cur
 
     # running export to gdb just for CNDDB dataset others were ran prior to this function
     if layerType == "CNDDB":
         arcpy.AddMessage("Total records deleted because they were Plants from San Bernardino : " + str(plant0512num))
+        arcpy.AddMessage("Total records deleted because they were Rana boylii not in target forests : " + str(ranaboyliinum))
         copy_to_gdb("Interim", filename)
-
-    # if layerType == "CNDDB":
-    #     with arcpy.da.UpdateCursor(intersectFeatureClass, ["Type", "UnitID"]) as cursor:
-    #         for row in cursor:
-    #             if row[0] == "PLANT" and row[1] == "0512":
-    #                 cursor.deleteRow()
-    #                 arcpy.AddMessage("Deleted row")
 
     arcpy.AddMessage("Repairing Geometry ......")
     arcpy.RepairGeometry_management(filename)
@@ -736,13 +809,15 @@ def unitid_dissolve(filename):
 
     dissolveFeatureClass = filename + "_dissolved"
 
-    arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
+    if sys.version_info[0] < 3:
+        arcpy.Dissolve_management(filename, dissolveFeatureClass,
+                                        ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
+                                         "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"], "", "SINGLE_PART")
+    else:
+        arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
                               ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
                                "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"])
 
-    # arcpy.Dissolve_management(filename, dissolveFeatureClass,
-    #                                 ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
-    #                                  "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"], "", "SINGLE_PART")
 
     # May delete this once I confirm we don't need BUFF_DIST from Stacey
     # arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
@@ -788,7 +863,12 @@ try:
             if layerType == "Local":
                 arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
             else:
-                arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
+                if sys.version_info[0] < 3:
+                    arcpy.AddMessage("Python version of ArcGIS 10.x requires Intersect_analysis.")
+                    arcpy.AddMessage("Switch to ArcGIS Pro to use Pairwise Intersection and reduce runtime.")
+                    arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
+                else:
+                    arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
 
             arcpy.AddMessage("Completed Intersection")
 
@@ -807,27 +887,30 @@ try:
         arcpy.AddMessage("Intersecting with USFS Ownership feature class .....")
         arcpy.AddMessage("Please be patient while this runs .....")
 
-        # arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
-
-        arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
+        if sys.version_info[0] < 3:
+            arcpy.AddMessage("Python version of ArcGIS 10.x requires Intersect_analysis.")
+            arcpy.AddMessage("Switch to ArcGIS Pro to use Pairwise Intersection and reduce runtime.")
+            arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
+        else:
+            arcpy.PairwiseIntersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
 
         arcpy.AddMessage("Completed Intersection")
 
         # CNDDB layer is skipped here because we need to remove BDF plants prior to exporting GDB
         if layerType != "CNDDB":
-            # may need to fix the NOAA layer - may remove this and just use the above
-            if layerType == "NOAA_ESU":
-                copy_to_gdb("Interim", nameOfFile)
-            else:
-                copy_to_gdb("Interim", intersectFeatureClass)
+            # # may need to fix the NOAA layer - may remove this and just use the above
+            # if layerType == "NOAA_ESU":
+            #     copy_to_gdb("Interim", nameOfFile)
+            # else:
+            copy_to_gdb("Interim", intersectFeatureClass)
 
         dissolveFC = unitid_dissolve(intersectFeatureClass)
 
-        # may need to fix the NOAA layer - may remove this and just use the above
-        if layerType == "NOAA_ESU":
-            copy_to_gdb("Final", dissolveFC)
-        else:
-            copy_to_gdb("Final", dissolveFC)
+        # # may need to fix the NOAA layer - may remove this and just use the above
+        # if layerType == "NOAA_ESU":
+        #     copy_to_gdb("Final", dissolveFC)
+        # else:
+        copy_to_gdb("Final", dissolveFC)
 
     arcpy.AddMessage("Completed Script successfully!!")
 
@@ -835,3 +918,5 @@ except arcpy.ExecuteError:
     arcpy.AddError(arcpy.GetMessages(2))
 except Exception as e:
     arcpy.AddMessage(e)
+
+
