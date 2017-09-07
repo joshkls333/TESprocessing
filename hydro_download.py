@@ -4,7 +4,7 @@
 # Description: Downloads all data for hydrology processing from USGS. Unzips data
 #              and stores it in an Download folder in the workspace folder used. Also
 #              performs download and unzip of all ESU data from NOAA. Completes external
-#              download and unzip of data by pulling critical habitat data form FWS.
+#              download and unzip of data by pulling critical habitat data from FWS.
 #              Note: usage is limited to ArcGIS 10.x because of Python version issues with Pro.
 #                    Due to the usage of urllib module. Will need to change for Pro.
 #
@@ -22,8 +22,8 @@ import urllib
 import zipfile
 
 # Set workspace or obtain from user input
-in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
-# in_workspace = sys.argv[1]
+# in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
+in_workspace = sys.argv[1]
 
 arcpy.env.workspace = in_workspace
 arcpy.env.overwriteOutput = True

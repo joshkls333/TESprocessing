@@ -308,9 +308,10 @@ try:
         arcpy.AddMessage("Intersecting with USFS Ownership feature class .....")
         arcpy.AddMessage("Please be patient while this runs .....")
 
-        # arcpy.Intersect_analysis([bufferOutput, usfsOwnershipFeatureClass], intersectFeatureClass)
-
-        arcpy.PairwiseIntersect_analysis([bufferOutput, usfsOwnershipFeatureClass], intersectFeatureClass)
+        if sys.version_info[0] < 3:
+            arcpy.Intersect_analysis([bufferOutput, usfsOwnershipFeatureClass], intersectFeatureClass)
+        else:
+            arcpy.PairwiseIntersect_analysis([bufferOutput, usfsOwnershipFeatureClass], intersectFeatureClass)
 
         arcpy.AddMessage("Completed Intersection")
 
@@ -336,13 +337,14 @@ try:
 
         dissolveFeatureClass = intersectFeatureClass + "_dissolved"
 
-        arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
+        if sys.version_info[0] < 3:
+            arcpy.Dissolve_management(intersectFeatureClass, dissolveFeatureClass,
+                                            ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
+                                             "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"], "", "SINGLE_PART")
+        else:
+            arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
                                         ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
                                          "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"])
-
-        # arcpy.Dissolve_management(intersectFeatureClass, dissolveFeatureClass,
-        #                                 ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
-        #                                  "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"], "", "SINGLE_PART")
 
         arcpy.AddMessage("Repairing Dissolved Geometry ......")
         arcpy.RepairGeometry_management(dissolveFeatureClass)

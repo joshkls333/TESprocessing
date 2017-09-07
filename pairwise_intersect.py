@@ -2,7 +2,8 @@
 # pairwise_intersect.py
 #
 # Usage: PairwiseIntersect_analysis
-# Description: Performs an Intersect_analysis with pairwise processing that only
+# Description:
+# Performs an Intersect_analysis with pairwise processing that only
 #              runs in ArcGIS Pro. After the intersection data is exported to FWS GDB.
 #              UnitID field is populated based on intersection and a Dissolve is performed
 #              to dissolve data and remove extraneous fields. Data is exported to Final
@@ -34,7 +35,7 @@ import csv
 
 in_workspace = sys.argv[1]
 
-in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
+# in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
 local_gdb = in_workspace + "\\Local_Data\\2017_Local_CAALB83.gdb\\"
 local_data = local_gdb + "\\Explode"
 
@@ -58,7 +59,7 @@ if layerType == "Local":
         arcpy.CreateFeatureDataset_management(local_gdb, "Intersect_New", 3310)
         intersectFeatureDataset = local_gdb + "\\Intersect_New\\"
 elif layerType == "NOAA_ESU":
-    noaaGdb = in_workspace + "NOAA_ESU\\2017_NOAA_ESU_CAALB83.gdb"
+    noaaGdb = in_workspace + "\\NOAA_ESU\\2017_NOAA_ESU_CAALB83.gdb"
     arcpy.env.workspace = noaaGdb
     outFeatClass = noaaGdb
 else:
@@ -88,7 +89,7 @@ tesvariablelist = ["Endangered", "Threatened", "Sensitive"]
 
 for tes in tesvariablelist:
 
-    newPath = in_workspace + "2017_" + tes
+    newPath = in_workspace + "\\2017_" + tes
 
     # Geodatabases for final merge
     identInterGdb = "2017_" + tes + "_IdentInter_CAALB83.gdb"
@@ -140,10 +141,10 @@ def copy_to_gdb(stage, filename):
         arcpy.SelectLayerByAttribute_management("tmplyr", "NEW_SELECTION", "GRANK_FIRE = '" + tes_rank + "'")
 
         if stage == "Interim":
-            outlocation = in_workspace + "2017_" + tes_rank + "\\" + "2017_FRA_" + \
+            outlocation = in_workspace + "\\2017_" + tes_rank + "\\" + "2017_FRA_" + \
                           tes_rank + "_OriginalDataBufferedAndNonBufferedAreas_CAALB83.gdb" + "\\"
         else:
-            outlocation = in_workspace + "2017_" + tes_rank + "\\2017_" + tes_rank + "_IdentInter_CAALB83.gdb\\"
+            outlocation = in_workspace + "\\2017_" + tes_rank + "\\2017_" + tes_rank + "_IdentInter_CAALB83.gdb\\"
 
         outputfilename = get_filename(tes_rank, filename)
 
@@ -168,6 +169,7 @@ def copy_to_gdb(stage, filename):
     arcpy.AddMessage(" ____________________________________________________________________")
     return
 
+
 def unitid_dissolve(filename):
     arcpy.AddMessage(" ____________________________________________________________________")
 
@@ -182,6 +184,8 @@ def unitid_dissolve(filename):
     fieldspecies = "SNAME_FIRE"
     plant0512num = 0
     ranaboyliinum = 0
+    cohosalmnum = 0
+    ranamuscosanum = 0
 
     csvfile = in_workspace + "\\csv_tables\CNDDB_SummaryTable.csv"
 
@@ -210,6 +214,7 @@ def unitid_dissolve(filename):
             if speciesname == "Oncorhynchus kisutch" \
                     and str(row.getValue(field)) == "516":
                 cur.deleteRow(row)
+                cohosalmnum += 1
                 arcpy.AddMessage(
                     "Deleting row for Oncorhynchus kisutch because forest not protected, found in " + forestname)
         elif layerType == "Critical_Habitat_Polygons":
@@ -219,6 +224,7 @@ def unitid_dissolve(filename):
                     and str(row.getValue(field)) != "502" \
                     and str(row.getValue(field)) != "507":
                 cur.deleteRow(row)
+                ranamuscosanum += 1
                 arcpy.AddMessage(
                     "Deleting row for Rana muscosa because not Southern forest species, found in " + forestname)
         # Used for filtering out records in CNDDB
@@ -248,7 +254,9 @@ def unitid_dissolve(filename):
             else:
                 # Used for deleting all the species selected not in a particular forest
                 for item in selectionList:
-                    if item[0].startswith(speciesname) and speciesname != "Rana boylii" and speciesname != "Rana muscosa":
+                    if item[0].startswith(speciesname) \
+                            and speciesname != "Rana boylii" \
+                            and speciesname != "Rana muscosa":
                         if item[3] == "":
                             break
                         elif item[3] != forestname.upper():
@@ -260,8 +268,18 @@ def unitid_dissolve(filename):
 
     # running export to gdb just for CNDDB dataset others were ran prior to this function
     if layerType == "CNDDB":
-        arcpy.AddMessage("Total records deleted because they were Plants from San Bernardino : " + str(plant0512num))
-        arcpy.AddMessage("Total records deleted because they were Rana boylii not in target forests : " + str(ranaboyliinum))
+        arcpy.AddMessage("Total records deleted because they were Plants from San Bernardino : "
+                         + str(plant0512num))
+        arcpy.AddMessage("Total records deleted because they were Rana boylii not in target forests : "
+                         + str(ranaboyliinum))
+        copy_to_gdb("Interim", filename)
+    elif layerType == "Wildlife_Observations":
+        arcpy.AddMessage("Total records deleted because they were Oncorhynchus kisutch in STF : "
+                         + str(cohosalmnum))
+        copy_to_gdb("Interim", filename)
+    elif layerType == "Critical_Habitat_Polygons":
+        arcpy.AddMessage("Total records deleted because they were Rana muscosa not in southern forests : "
+                         + str(ranamuscosanum))
         copy_to_gdb("Interim", filename)
 
     arcpy.AddMessage("Repairing Geometry ......")
@@ -279,7 +297,6 @@ def unitid_dissolve(filename):
         arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
                               ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
                                "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"])
-
 
     # May delete this once I confirm we don't need BUFF_DIST from Stacey
     # arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
@@ -358,8 +375,8 @@ try:
 
         arcpy.AddMessage("Completed Intersection")
 
-        # CNDDB layer is skipped here because we need to remove BDF plants prior to exporting GDB
-        if layerType != "CNDDB":
+        # These layers are modified first prior to
+        if layerType != "CNDDB" and layerType != "Wildlife_Observations" and layerType != "Critical_Habitat_Polygons":
             # # may need to fix the NOAA layer - may remove this and just use the above
             # if layerType == "NOAA_ESU":
             #     copy_to_gdb("Interim", nameOfFile)

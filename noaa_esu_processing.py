@@ -10,6 +10,9 @@
 #              and performs an explode and repair. Next steps will be done with
 #              pairwise_intersection script.
 #
+# Usage: CreateFileGDB_management, CopyFeatures_management, Clip_analysis,
+#        Merge_management, MultipartToSinglepart_management, RepairGeometry_management
+#
 # Runtime Estimates: 1 hr 28 min 24 sec
 #
 # Created by: Josh Klaus 08/25/2017 jklaus@fs.fed.us
@@ -24,8 +27,8 @@ import datetime
 import shutil
 
 # Set workspace or obtain from user input
-in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
-# in_workspace = sys.argv[1]
+# in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
+in_workspace = sys.argv[1]
 
 arcpy.env.workspace = in_workspace
 arcpy.env.overwriteOutput = True

@@ -14,6 +14,10 @@
 #              is processing. After this and explode and repair occurs.
 #              Certain datasets will require a final merge with special feature classes.
 #
+# Arcpy Usage: Project_management, FeatureClassToGeodatabase_conversion, MakeFeatureLayer_management,
+#              CopyFeatures_management, GetCount_management, AddField_management, UpdateCursor, Merge_management,
+#              Buffer_analysis, RepairGeometery_management, SelectLayerByAttribute_management
+#
 # Runtime Estimates: TESP       = 1 min 26 sec
 #                    Wild Sites =       54 sec
 #                    Wild Obs   = 5 min 43 sec
@@ -32,8 +36,8 @@ import os
 import datetime
 
 # Set workspace or obtain from user input
-in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
-# in_workspace = sys.argv[1]
+# in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
+in_workspace = sys.argv[1]
 
 arcpy.env.workspace = in_workspace
 arcpy.env.overwriteOutput = True
@@ -68,9 +72,9 @@ for tes in tesvariablelist:
 #  Please note the following selections of inTable and csv are file dependent
 # --------------------------------------------------------------------------------
 
-# layerType = sys.argv[4]
+layerType = sys.argv[4]
 
-layerType = "CNDDB"
+# layerType = "CNDDB"
 
 outputDir = in_workspace + "\\" + "Output"
 if not os.path.exists(outputDir):
@@ -89,23 +93,23 @@ arcpy.AddMessage("Layer Type: " + layerType)
 
 #-------------------------------------------------------------------------------------------
 # the below is hardcoded values used for testing and debugging
-inTable = in_workspace
+# inTable = in_workspace
 
-# inTable = sys.argv[2]
+inTable = sys.argv[2]
 
 # if inTable == "#":
-if layerType == "TESP":
-    inTable += "\\USFS_EDW\\EDW_TESP_r05_021617_Everything.gdb\\TESP\\TESP_OccurrenceAll"
-elif layerType == "Wildlife_Sites":
-    inTable += "\\USFS_EDW\\EDW_FishWildlife_R05_021617_Everything.gdb\\Fish_and_Wildlife\\WildlifeSites"
-elif layerType == "Wildlife_Observations":
-    inTable += "\\USFS_EDW\\EDW_FishWildlife_R05_021617_Everything.gdb\\Fish_and_Wildlife\\FishWildlife_Observation"
-elif layerType == "Critical_Habitat_Lines":
-    inTable += "\\CHab\\crithab_all_layers\\CRITHAB_LINE.shp"
-elif layerType == "Critical_Habitat_Polygons":
-    inTable += "\\CHab\\crithab_all_layers\\CRITHAB_POLY.shp"
-elif layerType == "CNDDB":
-    inTable += "\\CNDDB\\gis_gov\\cnddb.shp"
+# if layerType == "TESP":
+#     inTable += "\\USFS_EDW\\EDW_TESP_r05_021617_Everything.gdb\\TESP\\TESP_OccurrenceAll"
+# elif layerType == "Wildlife_Sites":
+#     inTable += "\\USFS_EDW\\EDW_FishWildlife_R05_021617_Everything.gdb\\Fish_and_Wildlife\\WildlifeSites"
+# elif layerType == "Wildlife_Observations":
+#     inTable += "\\USFS_EDW\\EDW_FishWildlife_R05_021617_Everything.gdb\\Fish_and_Wildlife\\FishWildlife_Observation"
+# elif layerType == "Critical_Habitat_Lines":
+#     inTable += "\\CHab\\crithab_all_layers\\CRITHAB_LINE.shp"
+# elif layerType == "Critical_Habitat_Polygons":
+#     inTable += "\\CHab\\crithab_all_layers\\CRITHAB_POLY.shp"
+# elif layerType == "CNDDB":
+#     inTable += "\\CNDDB\\gis_gov\\cnddb.shp"
 
 #------------------------------------------------------------------------------
 # Testing to see if data is projected in NAD 1983 California Teale Albers
@@ -156,22 +160,22 @@ if layerType == "CNDDB":
 # Note the different ways of bringing in a csv for lookup data on the buffer amount, forest, and status
 # _____________________________________________________________________________________________________
 
-# csvFile = sys.argv[3]
+csvFile = sys.argv[3]
 
-csvFile = in_workspace + "\\csv_tables"
+# csvFile = in_workspace + "\\csv_tables"
 
-if layerType == "TESP":
-    csvFile += "\\TESP_SummaryTable.csv"
-elif layerType == "Wildlife_Sites":
-    csvFile += "\\Wildlife_Sites_SummaryTable.csv"
-elif layerType == "Wildlife_Observations":
-    csvFile += "\\Wildlife_Observations_SummaryTable.csv"
-elif layerType == "Critical_Habitat_Polygons":
-    csvFile += "\\crithab.csv"
-elif layerType == "Critical_Habitat_Lines":
-    csvFile += "\\crithab.csv"
-elif layerType == "CNDDB":
-    csvFile += "\\CNDDB_SummaryTable.csv"
+# if layerType == "TESP":
+#     csvFile += "\\TESP_SummaryTable.csv"
+# elif layerType == "Wildlife_Sites":
+#     csvFile += "\\Wildlife_Sites_SummaryTable.csv"
+# elif layerType == "Wildlife_Observations":
+#     csvFile += "\\Wildlife_Observations_SummaryTable.csv"
+# elif layerType == "Critical_Habitat_Polygons":
+#     csvFile += "\\crithab.csv"
+# elif layerType == "Critical_Habitat_Lines":
+#     csvFile += "\\crithab.csv"
+# elif layerType == "CNDDB":
+#     csvFile += "\\CNDDB_SummaryTable.csv"
 
 arcpy.AddMessage("csv File: " + csvFile)
 arcpy.AddMessage("NOTE: Code will operate differently for csv in Pro vs 10.x!!!!!")
@@ -511,7 +515,7 @@ try:
         arcpy.AddMessage("Repairing Geometry of singlepart buffer layer ......")
         arcpy.RepairGeometry_management(singlePartBufferedFC)
 
-    elif layerType == "CNDDB":
+    if layerType == "CNDDB":
 
         arcpy.AddMessage("Moving Shasta Crayfish files into Geodatabase")
         # May need to change where this is being pulled

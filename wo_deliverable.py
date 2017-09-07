@@ -15,9 +15,9 @@ import arcpy
 import os
 import sys
 
-# in_workspace = sys.argv[1]
+in_workspace = sys.argv[1]
 
-in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
+# in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
 
 arcpy.env.workspace = in_workspace
 
@@ -33,7 +33,7 @@ final_wksp    = in_workspace + "\\" + final_r05_dist_gdb
 # final_thr_fc = final_wksp + "\\" + "FireRetardantEIS_Threatened"
 # final_sen_fc = final_wksp + "\\" + "FireRetardantEIS_Sensitive"
 
-wo_folder = in_workspace + "WO"
+wo_folder = in_workspace + "\\" + "WO"
 
 forestGDBList = ["S_R05_ANF_FireRetardantEIS.gdb",
                  "S_R05_BDF_FireRetardantEIS.gdb",

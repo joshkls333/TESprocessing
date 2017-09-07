@@ -19,9 +19,9 @@ import arcpy
 import os
 import sys
 
-# in_workspace = sys.argv[1]
+in_workspace = sys.argv[1]
 
-in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
+# in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant"
 
 sr = arcpy.SpatialReference(3310)
 
@@ -33,7 +33,7 @@ tesvariablelist = ["Endangered", "Threatened", "Sensitive"]
 
 for tes in tesvariablelist:
 
-    newPath = in_workspace + "2017_" + tes
+    newPath = in_workspace + "\\" + "2017_" + tes
 
     # Geodatabases for final merge
     merge_gdb = "2017_" + tes + "_Merged_CAALB83.gdb"
@@ -67,7 +67,7 @@ try:
 
     for tes in tesvariablelist:
         merge_gdb = "2017_" + tes + "_Merged_CAALB83.gdb"
-        newpath = in_workspace + "2017_" + tes
+        newpath = in_workspace + "\\" + "2017_" + tes
         tes_workspace = newpath + "\\" + "2017_" + tes + "_IdentInter_CAALB83.gdb"
         arcpy.env.workspace = tes_workspace
 
@@ -112,9 +112,10 @@ try:
 
         dissolveFeatureClass = final_no_fc + "_dissolved"
 
-        arcpy.PairwiseDissolve_analysis(final_no_fc, dissolveFeatureClass,["UnitID", "GRANK_FIRE"])
-
-        # arcpy.Dissolve_management(final_no_fc, dissolveFeatureClass, ["UnitID", "GRANK_FIRE"], "", "SINGLE_PART")
+        if sys.version_info[0] < 3:
+            arcpy.Dissolve_management(final_no_fc, dissolveFeatureClass, ["UnitID", "GRANK_FIRE"], "", "SINGLE_PART")
+        else:
+            arcpy.PairwiseDissolve_analysis(final_no_fc, dissolveFeatureClass,["UnitID", "GRANK_FIRE"])
 
         arcpy.AddMessage("Repairing Dissolved Geometry ......")
         arcpy.RepairGeometry_management(dissolveFeatureClass)

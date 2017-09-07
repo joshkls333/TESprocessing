@@ -26,8 +26,8 @@ import urllib2
 import zipfile
 
 # Set workspace or obtain from user input
-in_workspace = "T:\FS\NFS\R05\Program\\6800InformationMgmt\GIS\Workspace\jklaus\\Python\\"
-# in_workspace = sys.argv[1]
+# in_workspace = "T:\FS\NFS\R05\Program\\6800InformationMgmt\GIS\Workspace\jklaus\\Python\\"
+in_workspace = sys.argv[1]
 
 arcpy.env.workspace = in_workspace
 arcpy.env.overwriteOutput = True
@@ -42,7 +42,7 @@ dataWildlifeSites = edwDataWorkspace + "\\S_USA.Fish_and_Wildlife\\S_USA.Wildlif
 
 dataLandBasic = edwDataWorkspace + "\\S_USA.Land\\S_USA.BasicOwnership"
 
-newPath = in_workspace + "EDW_Extract"
+newPath = in_workspace + "\\" + "EDW_Extract"
 edwGDB = "edw_extract.gdb"
 selectQuery = "FS_UNIT_ID LIKE '05%'"
 
