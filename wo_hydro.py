@@ -14,9 +14,9 @@ import arcpy
 import os
 import sys
 
-# in_workspace = sys.argv[1]
+in_workspace = sys.argv[1]
 
-in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
+# in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
 
 arcpy.env.workspace = in_workspace
 

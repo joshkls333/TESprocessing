@@ -31,8 +31,8 @@ import os
 import datetime
 
 # Set workspace or obtain from user input
-in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
-# in_workspace = sys.argv[1]
+# in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
+in_workspace = sys.argv[1]
 
 arcpy.env.workspace = in_workspace
 arcpy.env.overwriteOutput = True
@@ -43,7 +43,7 @@ curMonth = str(now.month)
 curYear = str(now.year)
 arcpy.AddMessage("Year is " + curYear)
 
-hydroWorkspace = in_workspace + "NHD" + curYear + "\\" + "Subregions" + "\\"
+hydroWorkspace = in_workspace + "\\" + "NHD" + curYear + "\\" + "Subregions" + "\\"
 
 outputDir = in_workspace + "\\" + "Output"
 
@@ -54,7 +54,7 @@ outputWorkspace = outputDir + "\\" + outputHydroDir + "\\"
 hydroFeatureDataset = "\\" + "Hydrography" + "\\"
 
 # Need to rename when done with testing
-projectedGDB = "Hydro_Test_2017_CAALB83_newproj.gdb"
+projectedGDB = "Hydro_Test_" + curYear + "_CAALB83_newproj.gdb"
 
 outputProjGDB = outputWorkspace + projectedGDB
 
@@ -93,7 +93,8 @@ intersectList = []
 bufferField = "BUFFM_FIRE"
 
 usfsOwnershipFeatureClass = in_workspace + \
-                            "\\USFS_Ownership_LSRS\\2017_USFS_Ownership_CAALB83.gdb\\USFS_OwnershipLSRS_2017"
+                            "\\USFS_Ownership_LSRS\\" + curYear + \
+                            "_USFS_Ownership_CAALB83.gdb\\USFS_OwnershipLSRS_" + curYear
 
 try:
 

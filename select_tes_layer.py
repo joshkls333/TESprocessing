@@ -42,13 +42,9 @@ in_workspace = sys.argv[1]
 arcpy.env.workspace = in_workspace
 arcpy.env.overwriteOutput = True
 
-# -------------------------------------------------------------------------------
-# the following section will create folders and geodatabases to store Deliverables
-# for different stages of the processing of the individual databases
-# -------------------------------------------------------------------------------
-
 # using the now variable to assign year everytime there is a hardcoded 2017
 now = datetime.datetime.today()
+curMonth = str(now.month)
 curYear = str(now.year)
 arcpy.AddMessage("Year is " + curYear)
 
@@ -56,14 +52,19 @@ sciNameField = ""
 commonNameField = ""
 sourceField = ""
 
+# -------------------------------------------------------------------------------
+# the following section will create folders and geodatabases to store Deliverables
+# for different stages of the processing of the individual databases
+# -------------------------------------------------------------------------------
+
 tesvariablelist = ["Endangered", "Threatened", "Sensitive"]
 
 for tes in tesvariablelist:
-    newPath = in_workspace + "\\2017_" + tes
-    tesGDB = "2017_FRA_" + tes + "_OriginalDataNoBuffers_FWSDeliverable_CAALB83.gdb"
+    newPath = in_workspace + "\\" + curYear + "_" + tes
+    tesGDB = curYear + "_FRA_" + tes + "_OriginalDataNoBuffers_FWSDeliverable_CAALB83.gdb"
 
     if not os.path.exists(newPath):
-        arcpy.AddMessage("Creating directory for "+ tes + " Data Deliverables ....")
+        arcpy.AddMessage("Creating directory for " + tes + " Data Deliverables ....")
         os.makedirs(newPath)
         arcpy.AddMessage("Creating Geodatabase for " + tes + " Data Deliverables ....")
         arcpy.CreateFileGDB_management(newPath, tesGDB)
@@ -86,7 +87,7 @@ if not os.path.exists(outputDir + "\\" + layerType):
     os.makedirs(outputDir + "\\" + layerType)
 
 layerWorkSpace = outputDir + "\\" + layerType + "\\"
-projectedGDB = layerType + "_Test_2017_CAALB83_newproj.gdb"
+projectedGDB = layerType + "_Test_" + curYear + "_CAALB83_newproj.gdb"
 foundFC = layerType + "_" + curYear + "_original"
 
 arcpy.AddMessage("Layer Type: " + layerType)
@@ -196,30 +197,32 @@ arcpy.AddMessage("Listing of csv table data: ")
 for item in selectionList:
     arcpy.AddMessage("  " + str(item))
 
+pulldate = curMonth + "/" + curYear
+
 if layerType == "TESP":
     sciNameField = "SCIENTIFIC_NAME"
     commonNameField = "ACCEPTED_COMMON_NAME"
-    sourceField = "EDW TESP OccurrencesALL_FoundPlant pulled 2/2017"
+    sourceField = "EDW TESP OccurrencesALL_FoundPlant pulled " + pulldate
 elif layerType == "Wildlife_Sites":
     sciNameField = "SCI_NAME"
     commonNameField = "COMMON_NAME"
-    sourceField = "EDW Wildlife Sites pulled 2/2017"
+    sourceField = "EDW Wildlife Sites pulled " + pulldate
 elif layerType == "Wildlife_Observations":
     sciNameField = "SCIENTIFIC_NAME"
     commonNameField = "COMMON_NAME"
-    sourceField = "EDW OBS FishWildlife pulled 2/2017"
+    sourceField = "EDW OBS FishWildlife pulled " + pulldate
 elif layerType == "Critical_Habitat_Polygons":
     sciNameField = "sciname"
     commonNameField = "comname"
-    sourceField = "FWS Critical Habitat pulled 2/2017"
+    sourceField = "FWS Critical Habitat pulled " + pulldate
 elif layerType == "Critical_Habitat_Lines":
     sciNameField = "sciname"
     commonNameField = "comname"
-    sourceField = "FWS Critical Habitat pulled 2/2017"
+    sourceField = "FWS Critical Habitat pulled " + pulldate
 elif layerType == "CNDDB":
     sciNameField = "SNAME"
     commonNameField = "CNAME"
-    sourceField = 'CA CNDDB GOV version pulled 2/2017'
+    sourceField = "CA CNDDB GOV version pulled " + pulldate
 
 # --------------------------------------------------------------------
 # Builds the selection query used in SelectLayerByAttribute_management
@@ -454,21 +457,21 @@ try:
         arcpy.AddMessage("Selecting records based on " + tesRank + " rank ....")
         arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION", "GRANK_FIRE = '" + tesRank + "'")
 
-        outlocation = in_workspace + "\\2017_" + tesRank + "\\" + "2017_FRA_" + \
+        outlocation = in_workspace + "\\" + curYear + "_" + tesRank + "\\" + curYear + "_FRA_" + \
                       tesRank + "_OriginalDataNoBuffers_FWSDeliverable_CAALB83.gdb" + "\\"
 
         if layerType == "TESP":
-            outlocation += "EDW_TESP_2017_" + tesRank + "_OccurrenceAll_FoundPlants_nobuf"
+            outlocation += "EDW_TESP_" + curYear + "_" + tesRank + "_OccurrenceAll_FoundPlants_nobuf"
         elif layerType == "Wildlife_Sites":
-            outlocation += "EDW_WildlifeSites_2017_" + tesRank + "_nobuf"
+            outlocation += "EDW_WildlifeSites_" + curYear + "_" + tesRank + "_nobuf"
         elif layerType == "Wildlife_Observations":
-            outlocation += "EDW_FishWildlife_Observation_2017_" + tesRank + "_nobuf"
+            outlocation += "EDW_FishWildlife_Observation_" + curYear + "_" + tesRank + "_nobuf"
         elif layerType == "Critical_Habitat_Polygons":
-            outlocation += "CHabPolyAllSelectedSpecies_2017_" + tesRank + "_nobuf"
+            outlocation += "CHabPolyAllSelectedSpecies_" + curYear + "_" + tesRank + "_nobuf"
         elif layerType == "Critical_Habitat_Lines":
-            outlocation += "CHabLineAllSelectedSpecies_2017_" + tesRank + "_nobuf"
+            outlocation += "CHabLineAllSelectedSpecies_" + curYear + "_" + tesRank + "_nobuf"
         elif layerType == "CNDDB":
-            outlocation += "CNDDB_selects_2017_" + tesRank + "_nobuf"
+            outlocation += "CNDDB_selects_" + curYear + "_" + tesRank + "_nobuf"
 
         result = arcpy.GetCount_management("lyr")
         count = int(result.getOutput(0))
@@ -519,7 +522,7 @@ try:
 
         arcpy.AddMessage("Moving Shasta Crayfish files into Geodatabase")
         # May need to change where this is being pulled
-        tempWorkSpace = in_workspace + "\\CNDDB\\2017_CNDDB_CAALB83.gdb\\"
+        tempWorkSpace = in_workspace + "\\" + "CNDDB" + "\\" + curYear + "_CNDDB_CAALB83.gdb\\"
         crayFlowLines = tempWorkSpace + "CNDDB_Endangered_ShastaCrayfish_NHDFlowlines"
         crayWaterBodies = tempWorkSpace + "CNDDB_Endangered_ShastaCrayfish_NHDWaterbodies"
         arcpy.FeatureClassToGeodatabase_conversion([crayFlowLines, crayWaterBodies], projGDB)
@@ -540,7 +543,7 @@ try:
 
         for tesRank in tesRankList:
             finalWorkSpace = layerWorkSpace + "\\" + projectedGDB + "\\" + \
-                             "EDW_FishWildlife_Observation_2017_" + tesRank[:1]
+                             "EDW_FishWildlife_Observation_" + curYear + "_" + tesRank[:1]
 
             arcpy.AddMessage("Selecting records based on " + tesRank + " rank ....")
             arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION", "GRANK_FIRE = '" + tesRank +"'")
@@ -550,9 +553,11 @@ try:
     elif layerType == "Wildlife_Sites":
         arcpy.AddMessage("Moving two MYLF study area files into Geodatabase")
         # May need to fix where this data is being pulled
-        tmpWorkSpace = in_workspace + "\\USFS_EDW\\2017_EDW_CAALB83.gdb\\"
-        studyFlowLines = tmpWorkSpace + "EDW_WildlifeSites_FRASelectionSet_CAALB_NHDFlowlines_MYLF_E_INFStudyAreas_buffered"
-        studyWaterBodies = tmpWorkSpace + "EDW_WildlifeSites_FRASelectionSet_CAALB_NHDWaterbodys_MYLF_E_INFStudyAreas_buffered"
+        tmpWorkSpace = in_workspace + "\\" + "USFS_EDW" + "\\" + curYear + "_EDW_CAALB83.gdb\\"
+        studyFlowLines = tmpWorkSpace + \
+                         "EDW_WildlifeSites_FRASelectionSet_CAALB_NHDFlowlines_MYLF_E_INFStudyAreas_buffered"
+        studyWaterBodies = tmpWorkSpace + \
+                           "EDW_WildlifeSites_FRASelectionSet_CAALB_NHDWaterbodys_MYLF_E_INFStudyAreas_buffered"
         arcpy.FeatureClassToGeodatabase_conversion([studyFlowLines, studyWaterBodies], projGDB)
 
         arcpy.AddMessage("Merging the Wildlife Sites feature class with the two MYLF study area")

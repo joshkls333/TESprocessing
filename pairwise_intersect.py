@@ -32,11 +32,18 @@
 import arcpy
 import sys
 import csv
+import datetime
 
 in_workspace = sys.argv[1]
 
 # in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
-local_gdb = in_workspace + "\\Local_Data\\2017_Local_CAALB83.gdb\\"
+
+# using the now variable to assign year everytime there is a hardcoded 2017
+now = datetime.datetime.today()
+curYear = str(now.year)
+arcpy.AddMessage("Year is " + curYear)
+
+local_gdb = in_workspace + "\\Local_Data\\" + curYear + "_Local_CAALB83.gdb\\"
 local_data = local_gdb + "\\Explode"
 
 # layerType = "Condor_Hacking"
@@ -59,7 +66,7 @@ if layerType == "Local":
         arcpy.CreateFeatureDataset_management(local_gdb, "Intersect_New", 3310)
         intersectFeatureDataset = local_gdb + "\\Intersect_New\\"
 elif layerType == "NOAA_ESU":
-    noaaGdb = in_workspace + "\\NOAA_ESU\\2017_NOAA_ESU_CAALB83.gdb"
+    noaaGdb = in_workspace + "\\NOAA_ESU\\" + curYear + "_NOAA_ESU_CAALB83.gdb"
     arcpy.env.workspace = noaaGdb
     outFeatClass = noaaGdb
 else:
@@ -80,22 +87,22 @@ arcpy.env.overwriteOutput = True
 
 outFeatClass = sys.argv[2]
 
-nameOfFile = outFeatClass
-
-nameOfFile = nameOfFile.replace('C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\NOAA_ESU\\2017_NOAA_ESU_CAALB83.gdb\\','')
-arcpy.AddMessage(nameOfFile)
+# nameOfFile = outFeatClass
+#
+# nameOfFile = nameOfFile.replace('C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\NOAA_ESU\\2017_NOAA_ESU_CAALB83.gdb\\','')
+# arcpy.AddMessage(nameOfFile)
 
 tesvariablelist = ["Endangered", "Threatened", "Sensitive"]
 
 for tes in tesvariablelist:
 
-    newPath = in_workspace + "\\2017_" + tes
+    newPath = in_workspace + "\\" + curYear + "_" + tes
 
     # Geodatabases for final merge
-    identInterGdb = "2017_" + tes + "_IdentInter_CAALB83.gdb"
+    identInterGdb = curYear + "_" + tes + "_IdentInter_CAALB83.gdb"
 
     # Geodatabases for FWS Deliverable
-    fraDeliverableGdb = "2017_FRA_" + tes + "_OriginalDataBufferedAndNonBufferedAreas_CAALB83.gdb"
+    fraDeliverableGdb = curYear + "_FRA_" + tes + "_OriginalDataBufferedAndNonBufferedAreas_CAALB83.gdb"
 
     if arcpy.Exists( newPath + "\\" + identInterGdb):
         arcpy.AddMessage(tes + " GDB exists")
@@ -109,21 +116,21 @@ def get_filename(tes_rank, orig_filename):
 
     filename = ""
     if layerType == "TESP":
-        filename = "EDW_TESP_2017_OccurrenceAll_FoundPlants_ident_" + tes_rank
+        filename = "EDW_TESP_" + curYear + "_OccurrenceAll_FoundPlants_ident_" + tes_rank
     elif layerType == "Wildlife_Sites":
-        filename = "EDW_WildlifeSites_2017_ident_" + tes_rank
+        filename = "EDW_WildlifeSites_" + curYear + "_ident_" + tes_rank
     elif layerType == "Wildlife_Observations":
-        filename = "EDW_FishWildlife_Observation_2017_" + tes_rank[:1] + "_ident"
+        filename = "EDW_FishWildlife_Observation_" + curYear + "_" + tes_rank[:1] + "_ident"
     elif layerType == "Critical_Habitat_Polygons":
-        filename = "CHabPolyAllSelectedSpecies_2017_nobuf_Ident_" + tes_rank
+        filename = "CHabPolyAllSelectedSpecies_" + curYear + "_nobuf_Ident_" + tes_rank
     elif layerType == "Critical_Habitat_Lines":
-        filename = "CHabLineAllSelectedSpecies_2017_nobuf_Ident_" + tes_rank
+        filename = "CHabLineAllSelectedSpecies_" + curYear + "_nobuf_Ident_" + tes_rank
     elif layerType == "CNDDB":
-        filename = "CNDDB_2017_All_selectsAndShastaCrayfish_Ident_noBDF_" + tes_rank
+        filename = "CNDDB_" + curYear + "_All_selectsAndShastaCrayfish_Ident_noBDF_" + tes_rank
     elif layerType == "Condor_Hacking":
-        filename = "CNH_2017_ident"
+        filename = "CNH_" + curYear + "_ident"
     elif layerType == "Condor_Nest":
-        filename = "CN_2017_ident"
+        filename = "CN_" + curYear + "_ident"
     elif layerType == "Local" or layerType == "NOAA_ESU":
         filename = fc
 
@@ -141,10 +148,11 @@ def copy_to_gdb(stage, filename):
         arcpy.SelectLayerByAttribute_management("tmplyr", "NEW_SELECTION", "GRANK_FIRE = '" + tes_rank + "'")
 
         if stage == "Interim":
-            outlocation = in_workspace + "\\2017_" + tes_rank + "\\" + "2017_FRA_" + \
+            outlocation = in_workspace + "\\" + curYear + "_" + tes_rank + "\\" + curYear + "_FRA_" + \
                           tes_rank + "_OriginalDataBufferedAndNonBufferedAreas_CAALB83.gdb" + "\\"
         else:
-            outlocation = in_workspace + "\\2017_" + tes_rank + "\\2017_" + tes_rank + "_IdentInter_CAALB83.gdb\\"
+            outlocation = in_workspace + "\\" + curYear + "_" + tes_rank + "\\" \
+                                              + curYear + "_" + tes_rank + "_IdentInter_CAALB83.gdb\\"
 
         outputfilename = get_filename(tes_rank, filename)
 
@@ -189,9 +197,10 @@ def unitid_dissolve(filename):
 
     csvfile = in_workspace + "\\csv_tables\CNDDB_SummaryTable.csv"
 
-    arcpy.AddMessage("csv File: " + csvfile)
-    arcpy.AddMessage("NOTE: Code will operate differently for csv in Pro vs 10.x!!!!!")
-    arcpy.AddMessage("Version of Python: " + sys.version)
+    if layerType == "CNDDB":
+        arcpy.AddMessage("csv File: " + csvfile)
+        arcpy.AddMessage("NOTE: Code will operate differently for csv in Pro vs 10.x!!!!!")
+        arcpy.AddMessage("Version of Python: " + sys.version)
 
     if sys.version_info[0] < 3:
         # uncomment when using arcgis 10.3
@@ -289,19 +298,16 @@ def unitid_dissolve(filename):
 
     dissolveFeatureClass = filename + "_dissolved"
 
-    if sys.version_info[0] < 3:
-        arcpy.Dissolve_management(filename, dissolveFeatureClass,
-                                        ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
-                                         "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"], "", "SINGLE_PART")
-    else:
-        arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
-                              ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
-                               "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"])
+    dissolvefields = ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
+                      "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"]
 
-    # May delete this once I confirm we don't need BUFF_DIST from Stacey
-    # arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
-    #                                 ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
-    #                                  "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE", "BUFF_DIST"])
+    if layerType != "Critical_Habitat_Lines" and layerType != "Critical_Habitat_Polygons":
+        dissolvefields.append("BUFF_DIST")
+
+    if sys.version_info[0] < 3:
+        arcpy.Dissolve_management(filename, dissolveFeatureClass, dissolvefields, "", "SINGLE_PART")
+    else:
+        arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass, dissolvefields)
 
     arcpy.AddMessage("Repairing Dissolved Geometry ......")
     arcpy.RepairGeometry_management(filename)
@@ -313,7 +319,6 @@ def unitid_dissolve(filename):
 
 try:
 
-    # if layerType == "Local":
     if layerType == "Local" or layerType == "NOAA_ESU":
         fcList = arcpy.ListFeatureClasses()
 
@@ -327,7 +332,8 @@ try:
             outFeatClass = fc
 
             usfsOwnershipFeatureClass = in_workspace + \
-                                        "\\USFS_Ownership_LSRS\\2017_USFS_Ownership_CAALB83.gdb\\USFS_OwnershipLSRS_2017"
+                                        "\\USFS_Ownership_LSRS\\" + curYear + \
+                                        "_USFS_Ownership_CAALB83.gdb\\USFS_OwnershipLSRS_" + curYear
 
             intersectFeature = outFeatClass + "_intersect"
 
@@ -359,7 +365,8 @@ try:
     else:
 
         usfsOwnershipFeatureClass = in_workspace + \
-                                    "\\USFS_Ownership_LSRS\\2017_USFS_Ownership_CAALB83.gdb\\USFS_OwnershipLSRS_2017"
+                                        "\\USFS_Ownership_LSRS\\" + curYear + \
+                                        "_USFS_Ownership_CAALB83.gdb\\USFS_OwnershipLSRS_" + curYear
 
         intersectFeatureClass = outFeatClass + "_intersect"
 
