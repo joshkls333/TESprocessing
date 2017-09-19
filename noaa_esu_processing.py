@@ -103,7 +103,7 @@ if not os.path.exists(outputDir + "\\" + layerType):
     os.makedirs(outputDir + "\\" + layerType)
 
 layerWorkSpace = outputDir + "\\" + layerType + "\\"
-projectedGDB = layerType + "_Test_2017_CAALB83_newproj.gdb"
+projectedGDB = layerType + "_2017_CAALB83.gdb"
 
 if arcpy.Exists(layerWorkSpace + "\\" + projectedGDB):
     newProjectWorkSpace = layerWorkSpace + "\\" + projectedGDB + "\\"
@@ -187,6 +187,7 @@ try:
             row.SNAME_FIRE = esuSpeciesNameDict.get(species)
             row.CNAME_FIRE = esuCommonNameDict.get(species)
             row.CMNT_FIRE = "NHD Flowlines and Waterbodies used within accessible ESU"
+            row.INST_FIRE = " "
             row.BUFFT_FIRE = "300"
             row.BUFFM_FIRE = 91.44
 

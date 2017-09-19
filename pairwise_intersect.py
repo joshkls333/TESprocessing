@@ -34,7 +34,9 @@ import sys
 import csv
 import datetime
 
-in_workspace = sys.argv[1]
+# in_workspace = sys.argv[1]
+
+in_workspace = arcpy.GetParameterAsText(0)
 
 # in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
 
@@ -46,6 +48,20 @@ arcpy.AddMessage("Year is " + curYear)
 local_gdb = in_workspace + "\\Local_Data\\" + curYear + "_Local_CAALB83.gdb\\"
 local_data = local_gdb + "\\Explode"
 
+# The following is used for testing locally. DELETE when done testing.
+# -------------------------------------------------------------------------------
+# outFeatClass = in_workspace + "\\" + layerType + "\\Critical_Habitat_Polygons_Test_2017_CAALB83_newproj.gdb\Critical_Habitat_Polygons_2017_Occurrence_found_newE_singlepart"
+
+# outFeatClass = in_workspace + "\\" + "Output" + "\\" + layerType + "\\TESP_Test_2017_CAALB83_newproj.gdb\\TESP_2017_original_buffered_single"
+
+# outFeatClass = in_workspace + "\\" + layerType + "\\Wildlife_Sites_Test_2017_CAALB83_newproj.gdb\\Wildlife_Sites_2017_Occurrence_found_newE_singlepart_buffer_spart"
+
+# outFeatClass = in_workspace + "\\CondorData_noFOIAnoRelease\\2017_Condor_CAALB83.gdb\\CondorHacking_2015"
+
+# outFeatClass = in_workspace + "\\Output\\CNDDB\\CNDDB_Test_2017_CAALB83_newproj.gdb\\CNDDB_2017_original_merge"
+
+# -------------------------------------------------------------------------------
+
 # layerType = "Condor_Hacking"
 
 # layerType = "Local"
@@ -54,7 +70,15 @@ local_data = local_gdb + "\\Explode"
 
 # layerType = "CNDDB"
 
-layerType = sys.argv[3]
+# -------------------------------------------------------------------------------
+
+# outFeatClass = sys.argv[2]
+#
+# layerType = sys.argv[3]
+
+outFeatClass = arcpy.GetParameterAsText(1)
+
+layerType = arcpy.GetParameterAsText(2)
 
 sr = arcpy.SpatialReference(3310)
 
@@ -74,19 +98,6 @@ else:
 
 arcpy.env.overwriteOutput = True
 
-# The following is used for testing locally. DELETE when done testing.
-# outFeatClass = in_workspace + "\\" + layerType + "\\Critical_Habitat_Polygons_Test_2017_CAALB83_newproj.gdb\Critical_Habitat_Polygons_2017_Occurrence_found_newE_singlepart"
-
-# outFeatClass = in_workspace + "\\" + "Output" + "\\" + layerType + "\\TESP_Test_2017_CAALB83_newproj.gdb\\TESP_2017_original_buffered_single"
-
-# outFeatClass = in_workspace + "\\" + layerType + "\\Wildlife_Sites_Test_2017_CAALB83_newproj.gdb\\Wildlife_Sites_2017_Occurrence_found_newE_singlepart_buffer_spart"
-
-# outFeatClass = in_workspace + "\\CondorData_noFOIAnoRelease\\2017_Condor_CAALB83.gdb\\CondorHacking_2015"
-
-# outFeatClass = in_workspace + "\\Output\\CNDDB\\CNDDB_Test_2017_CAALB83_newproj.gdb\\CNDDB_2017_original_merge"
-
-outFeatClass = sys.argv[2]
-
 # nameOfFile = outFeatClass
 #
 # nameOfFile = nameOfFile.replace('C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\NOAA_ESU\\2017_NOAA_ESU_CAALB83.gdb\\','')
@@ -104,7 +115,7 @@ for tes in tesvariablelist:
     # Geodatabases for FWS Deliverable
     fraDeliverableGdb = curYear + "_FRA_" + tes + "_OriginalDataBufferedAndNonBufferedAreas_CAALB83.gdb"
 
-    if arcpy.Exists( newPath + "\\" + identInterGdb):
+    if arcpy.Exists(newPath + "\\" + identInterGdb):
         arcpy.AddMessage(tes + " GDB exists")
     else:
         arcpy.AddMessage("Creating Geodatabase for " + tes + " Data Deliverables containing intersection data ....")

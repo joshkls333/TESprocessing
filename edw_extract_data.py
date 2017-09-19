@@ -60,24 +60,24 @@ r5WildSitesFeatureClass = "Wild_Sites_region5"
 newLandFeatureClass = "Land_Extract"
 r5LandFeatureClass = "Land_region5"
 
-forestGDBDict = {"Angeles National Forest": 501,
-                 "San Bernardino National Forest": 512,
-                 "Cleveland National Forest": 502,
-                 "Eldorado National Forest": 503,
-                 "Inyo National Forest": 504,
-                 "Klamath National Forest": 505,
-                 "Lassen National Forest": 506,
-                 "Los Padres National Forest": 507,
-                 "Modoc National Forest": 509,
-                 "Mendocino National Forest": 508,
-                 "Pluman National Forest": 511,
-                 "Shasta-Trinity National Forest": 514,
-                 "Sierra National Forest": 515,
-                 "Sequoia National Forest": 513,
-                 "Six Rivers National Forest": 510,
-                 "Stanislaus National Forest": 516,
-                 "Lake Tahoe Basin Management Unit": 519,
-                 "Tahoe National Forest": 516}
+forestGDBDict = {"Angeles National Forest": "0501",
+                 "San Bernardino National Forest": "0512",
+                 "Cleveland National Forest": "0502",
+                 "Eldorado National Forest": "0503",
+                 "Inyo National Forest": "0504",
+                 "Klamath National Forest": "0505",
+                 "Lassen National Forest": "0506",
+                 "Los Padres National Forest": "0507",
+                 "Modoc National Forest": "0509",
+                 "Mendocino National Forest": "0508",
+                 "Pluman National Forest": "0511",
+                 "Shasta-Trinity National Forest": "0514",
+                 "Sierra National Forest": "0515",
+                 "Sequoia National Forest": "0513",
+                 "Six Rivers National Forest": "0510",
+                 "Stanislaus National Forest": "0516",
+                 "Lake Tahoe Basin Management Unit": "0519",
+                 "Tahoe National Forest": "0516"}
 
 
 if not os.path.exists(newPath):

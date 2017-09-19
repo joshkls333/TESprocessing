@@ -86,9 +86,14 @@ if not os.path.exists(outputDir + "\\" + layerType):
     arcpy.AddMessage("Creating output directory for " + layerType)
     os.makedirs(outputDir + "\\" + layerType)
 
-layerWorkSpace = outputDir + "\\" + layerType + "\\"
-projectedGDB = layerType + "_Test_" + curYear + "_CAALB83_newproj.gdb"
-foundFC = layerType + "_" + curYear + "_original"
+layerWorkspace = outputDir + "\\" + layerType + "\\"
+projectedGDB = layerType + "_" + curYear + "_CAALB83.gdb"
+fcFilename = layerType + "_" + curYear
+originalFC = fcFilename + "_original"
+
+projWorkspace = layerWorkspace + "\\" + projectedGDB + "\\"
+fileRoot = projWorkspace + fcFilename
+selectFC = fileRoot + "_selection"
 
 arcpy.AddMessage("Layer Type: " + layerType)
 
@@ -117,13 +122,11 @@ inTable = sys.argv[2]
 # If not run Project_management to project the data
 #------------------------------------------------------------------------------
 
-if arcpy.Exists(layerWorkSpace + "\\" + projectedGDB):
-    newProjectWorkSpace = layerWorkSpace + "\\" + projectedGDB + "\\" + foundFC
+if arcpy.Exists(layerWorkspace + "\\" + projectedGDB):
+    newProjectWorkspace = projWorkspace + originalFC
 else:
-    arcpy.CreateFileGDB_management(layerWorkSpace, projectedGDB)
-    newProjectWorkSpace = layerWorkSpace + "\\" + projectedGDB + "\\" + foundFC
-
-selectFC = newProjectWorkSpace + "_select"
+    arcpy.CreateFileGDB_management(layerWorkspace, projectedGDB)
+    newProjectWorkspace = projWorkspace + originalFC
 
 arcpy.AddMessage("Origin of Data: " + inTable)
 
@@ -135,7 +138,7 @@ sr = arcpy.SpatialReference(3310)
 
 if spatial_ref.name != "NAD_1983_California_Teale_Albers":
     arcpy.AddMessage("Reprojecting layer to NAD 1983 California Teale Albers ....")
-    arcpy.Project_management(inTable, newProjectWorkSpace, sr)
+    arcpy.Project_management(inTable, newProjectWorkspace, sr)
 
 # ------------------------------------------------------------------------------------------
 # Adding fields to store information that will be used for final deliverables
@@ -146,17 +149,17 @@ arcpy.AddMessage("Adding fields [BUFFT_FIRE, BUFFM_FIRE, CMNT_FIRE, INST_FIRE]")
 if layerType == "CNDDB":
     arcpy.AddMessage("Adding field Type to record Plant vs Animal to filter later after intersection for removal of BDF")
 
-arcpy.AddField_management(newProjectWorkSpace, "UnitID", "TEXT", "", "", "5", "", "NULLABLE", "NON_REQUIRED", "")
-arcpy.AddField_management(newProjectWorkSpace, "GRANK_FIRE", "TEXT", "", "", "50", "", "NULLABLE", "NON_REQUIRED", "")
-arcpy.AddField_management(newProjectWorkSpace, "SOURCEFIRE", "TEXT", "", "", "50", "", "NULLABLE", "NON_REQUIRED", "")
-arcpy.AddField_management(newProjectWorkSpace, "SNAME_FIRE", "TEXT", "", "", "60", "", "NULLABLE", "NON_REQUIRED", "")
-arcpy.AddField_management(newProjectWorkSpace, "CNAME_FIRE", "TEXT", "", "", "60", "", "NULLABLE", "NON_REQUIRED", "")
-arcpy.AddField_management(newProjectWorkSpace, "BUFFT_FIRE", "SHORT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
-arcpy.AddField_management(newProjectWorkSpace, "BUFFM_FIRE", "SHORT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
-arcpy.AddField_management(newProjectWorkSpace, "CMNT_FIRE", "TEXT", "", "", "150", "", "NULLABLE", "NON_REQUIRED", "")
-arcpy.AddField_management(newProjectWorkSpace, "INST_FIRE", "TEXT", "", "", "150", "", "NULLABLE", "NON_REQUIRED", "")
+arcpy.AddField_management(newProjectWorkspace, "UnitID", "TEXT", "", "", "5", "", "NULLABLE", "NON_REQUIRED", "")
+arcpy.AddField_management(newProjectWorkspace, "GRANK_FIRE", "TEXT", "", "", "50", "", "NULLABLE", "NON_REQUIRED", "")
+arcpy.AddField_management(newProjectWorkspace, "SOURCEFIRE", "TEXT", "", "", "50", "", "NULLABLE", "NON_REQUIRED", "")
+arcpy.AddField_management(newProjectWorkspace, "SNAME_FIRE", "TEXT", "", "", "60", "", "NULLABLE", "NON_REQUIRED", "")
+arcpy.AddField_management(newProjectWorkspace, "CNAME_FIRE", "TEXT", "", "", "60", "", "NULLABLE", "NON_REQUIRED", "")
+arcpy.AddField_management(newProjectWorkspace, "BUFFT_FIRE", "SHORT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
+arcpy.AddField_management(newProjectWorkspace, "BUFFM_FIRE", "SHORT", "", "", "", "", "NULLABLE", "NON_REQUIRED", "")
+arcpy.AddField_management(newProjectWorkspace, "CMNT_FIRE", "TEXT", "", "", "150", "", "NULLABLE", "NON_REQUIRED", "")
+arcpy.AddField_management(newProjectWorkspace, "INST_FIRE", "TEXT", "", "", "150", "", "NULLABLE", "NON_REQUIRED", "")
 if layerType == "CNDDB":
-    arcpy.AddField_management(newProjectWorkSpace, "Type", "TEXT", "", "", "50", "", "NULLABLE", "NON_REQUIRED", "")
+    arcpy.AddField_management(newProjectWorkspace, "Type", "TEXT", "", "", "50", "", "NULLABLE", "NON_REQUIRED", "")
 
 # Note the different ways of bringing in a csv for lookup data on the buffer amount, forest, and status
 # _____________________________________________________________________________________________________
@@ -224,6 +227,8 @@ elif layerType == "CNDDB":
     commonNameField = "CNAME"
     sourceField = "CA CNDDB GOV version pulled " + pulldate
 
+    # Add blank strings for CMNT_FIRE and INST_FIRE
+
 # --------------------------------------------------------------------
 # Builds the selection query used in SelectLayerByAttribute_management
 # customized based on what the Scientific name field is and what other
@@ -287,7 +292,7 @@ arcpy.AddMessage("The Selection Query will be : " + selectQuery)
 
 try:
 
-    arcpy.MakeFeatureLayer_management(newProjectWorkSpace, "lyr" )
+    arcpy.MakeFeatureLayer_management(newProjectWorkspace, "lyr" )
 
     arcpy.AddMessage("Selecting layers based on selection ....")
     arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION", selectQuery )
@@ -317,6 +322,8 @@ try:
             row.CNAME_FIRE = row.getValue(commonNameField)
             row.BUFFT_FIRE = bufferAmount
             row.BUFFM_FIRE = bufferAmount * 0.3048
+            row.CMNT_FIRE = " "
+            row.INST_FIRE = " "
 
             for item in selectionList:
                 if item[0].startswith(speciesrow):
@@ -346,6 +353,7 @@ try:
             row.SOURCEFIRE = sourceField
             row.SNAME_FIRE = speciesrow
             row.CNAME_FIRE = row.getValue(commonNameField)
+            row.CMNT_FIRE = " "
 
             for item in selectionList:
 
@@ -408,6 +416,8 @@ try:
             row.SOURCEFIRE = sourceField
             row.SNAME_FIRE = speciesrow
             row.CNAME_FIRE = row.getValue(commonNameField)
+            row.CMNT_FIRE = " "
+            row.INST_FIRE = " "
 
             for item in selectionList:
 
@@ -438,7 +448,6 @@ try:
                 otherNum += 1
 
             cur.updateRow(row)
-
 
         del cur
 
@@ -483,11 +492,11 @@ try:
 
 # ----------------------------------------------------------------------
 
-    singlePartFeatureClass = newProjectWorkSpace + "_singlepart"
-    bufferFC = newProjectWorkSpace + "_buffer"
-    singlePartBufferedFC = newProjectWorkSpace + "_buffered_single"
-    projGDB = layerWorkSpace + "\\" + projectedGDB + "\\"
-    siteMerge = newProjectWorkSpace + "_merge"
+    singlePartFeatureClass = fileRoot + "_singlepart"
+    bufferFC = fileRoot + "_buffer"
+    singlePartBufferedFC = fileRoot + "_buffered_single"
+    fileMerge = fileRoot + "_merge"
+    interimfc = fileRoot + "_geocomplete"
 
     arcpy.AddMessage("Converting multipart geometry to singlepart .....")
 
@@ -518,6 +527,10 @@ try:
         arcpy.AddMessage("Repairing Geometry of singlepart buffer layer ......")
         arcpy.RepairGeometry_management(singlePartBufferedFC)
 
+        arcpy.CopyFeatures_management(singlePartBufferedFC, interimfc)
+    else:
+        arcpy.CopyFeatures_management(singlePartFeatureClass, interimfc)
+
     if layerType == "CNDDB":
 
         arcpy.AddMessage("Moving Shasta Crayfish files into Geodatabase")
@@ -525,14 +538,16 @@ try:
         tempWorkSpace = in_workspace + "\\" + "CNDDB" + "\\" + curYear + "_CNDDB_CAALB83.gdb\\"
         crayFlowLines = tempWorkSpace + "CNDDB_Endangered_ShastaCrayfish_NHDFlowlines"
         crayWaterBodies = tempWorkSpace + "CNDDB_Endangered_ShastaCrayfish_NHDWaterbodies"
-        arcpy.FeatureClassToGeodatabase_conversion([crayFlowLines, crayWaterBodies], projGDB)
+        arcpy.FeatureClassToGeodatabase_conversion([crayFlowLines, crayWaterBodies], projWorkspace)
 
         arcpy.AddMessage("Merging the CNDDDB feature class with the Shasta Crayfish files")
-        arcpy.Merge_management([crayFlowLines, crayWaterBodies, singlePartBufferedFC], siteMerge)
+        arcpy.Merge_management([crayFlowLines, crayWaterBodies, singlePartBufferedFC], fileMerge)
         arcpy.AddMessage("Finished with merge")
 
         arcpy.AddMessage("Repairing Geometry of merged layer")
-        arcpy.RepairGeometry_management(singlePartBufferedFC)
+        arcpy.RepairGeometry_management(fileMerge)
+
+        arcpy.CopyFeatures_management(fileMerge, interimfc)
 
     elif layerType == "Wildlife_Observations":
 
@@ -542,11 +557,10 @@ try:
         tesRankList = ["Endangered", "Threatened", "Sensitive"]
 
         for tesRank in tesRankList:
-            finalWorkSpace = layerWorkSpace + "\\" + projectedGDB + "\\" + \
-                             "EDW_FishWildlife_Observation_" + curYear + "_" + tesRank[:1]
+            finalWorkSpace = projWorkspace + "EDW_FishWildlife_Observation_" + curYear + "_" + tesRank[:1]
 
             arcpy.AddMessage("Selecting records based on " + tesRank + " rank ....")
-            arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION", "GRANK_FIRE = '" + tesRank +"'")
+            arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION", "GRANK_FIRE = '" + tesRank + "'")
             arcpy.AddMessage("Copying selected records to " + tesRank + " Feature Class ......")
             arcpy.CopyFeatures_management("lyr", finalWorkSpace)
 
@@ -558,18 +572,21 @@ try:
                          "EDW_WildlifeSites_FRASelectionSet_CAALB_NHDFlowlines_MYLF_E_INFStudyAreas_buffered"
         studyWaterBodies = tmpWorkSpace + \
                            "EDW_WildlifeSites_FRASelectionSet_CAALB_NHDWaterbodys_MYLF_E_INFStudyAreas_buffered"
-        arcpy.FeatureClassToGeodatabase_conversion([studyFlowLines, studyWaterBodies], projGDB)
+        arcpy.FeatureClassToGeodatabase_conversion([studyFlowLines, studyWaterBodies], projWorkspace)
 
         arcpy.AddMessage("Merging the Wildlife Sites feature class with the two MYLF study area")
-        arcpy.Merge_management([studyFlowLines, studyWaterBodies, singlePartBufferedFC], siteMerge)
+        arcpy.Merge_management([studyFlowLines, studyWaterBodies, singlePartBufferedFC], fileMerge)
         arcpy.AddMessage("Finished with merge")
 
         arcpy.AddMessage("Repairing Geometry of merged layer")
-        arcpy.RepairGeometry_management(singlePartBufferedFC)
+        arcpy.RepairGeometry_management(fileMerge)
+
+        arcpy.CopyFeatures_management(fileMerge, interimfc)
 
     if layerType == "Wildlife_Observations":
         arcpy.AddMessage("Ensure the removal of Acipenser medirostris from SRF due to bad data!!!!")
-    arcpy.AddMessage("Script complete ... check data and make changes ... then proceed to intersection")
+    arcpy.AddMessage("Script complete ... check data and make changes.")
+    arcpy.AddMessage("Use the geocomplete file and proceed to intersection.")
 
 except arcpy.ExecuteError:
     arcpy.AddError(arcpy.GetMessages(2))
