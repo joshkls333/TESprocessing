@@ -341,11 +341,11 @@ try:
         if sys.version_info[0] < 3:
             arcpy.Dissolve_management(intersectFeatureClass, dissolveFeatureClass,
                                             ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
-                                             "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"], "", "SINGLE_PART")
+                                             "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE", "BUFF_DIST"], "", "SINGLE_PART")
         else:
             arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
                                         ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
-                                         "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"])
+                                         "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE", "BUFF_DIST"])
 
         arcpy.AddMessage("Repairing Dissolved Geometry ......")
         arcpy.RepairGeometry_management(dissolveFeatureClass)

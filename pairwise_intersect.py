@@ -312,7 +312,7 @@ def unitid_dissolve(filename):
     dissolvefields = ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
                       "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE"]
 
-    if layerType != "Critical_Habitat_Lines" and layerType != "Critical_Habitat_Polygons":
+    if layerType != "Critical_Habitat_Lines" and layerType != "Critical_Habitat_Polygons" and layerType != "NOAA_ESU":
         dissolvefields.append("BUFF_DIST")
 
     if sys.version_info[0] < 3:

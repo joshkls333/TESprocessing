@@ -75,6 +75,16 @@ esuFilenameDict = {"CKCAC": "CKCAC_Chinook_CalifCoastal",
                    "STSCA": "STSCA_Steelhead_SouthernCalif",
                    "COSNC": "COSNC_Coho_SouthOregNorthCalifCoasts"}
 
+esuStatusDict = {"CKCAC": "Threatened",
+                 "CKCVF": "Sensitive",
+                 "CKCVS": "Threatened",
+                 "CKSAC": "Endangered",
+                 "STCCV": "Threatened",
+                 "STNCA": "Threatened",
+                 "STSCC": "Threatened",
+                 "STSCA": "Endangered",
+                 "COSNC": "Threatened"}
+
 # this workspace may change to output workspace from hydrology_processing.py
 noaaWorkspace = in_workspace + "\\NOAA_ESU\\"
 hydroClipWorkspace = in_workspace + "\\NHD2017\\2017_NHDfinal_CAALB83.gdb\\"
@@ -184,6 +194,7 @@ try:
 
         for row in cur:
             row.SOURCEFIRE = "NHD Subbasins " + curMonth + " " + curYear + " within ESU"
+            row.GRANK_FIRE = esuStatusDict.get(species)
             row.SNAME_FIRE = esuSpeciesNameDict.get(species)
             row.CNAME_FIRE = esuCommonNameDict.get(species)
             row.CMNT_FIRE = "NHD Flowlines and Waterbodies used within accessible ESU"
