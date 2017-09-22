@@ -28,9 +28,9 @@ in_workspace = sys.argv[1]
 arcpy.env.workspace = in_workspace
 arcpy.env.overwriteOutput = True
 
-subRegionList = ["1503", "1604", "1605", "1606", "1710", "1801",
-                 "1802", "1803", "1804", "1805", "1806", "1807",
-                 "1808", "1809", "1810"]
+subRegionList = ["1503", "1604", "1605", "1606", "1710", "1712",
+                 "1801", "1802", "1803", "1804", "1805", "1806",
+                 "1807", "1808", "1809", "1810"]
 
 salmonList = ["chinook", "coho", "steelhead"]
 

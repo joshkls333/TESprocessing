@@ -245,6 +245,7 @@ selectQuery += "'" + selectionList[selectionListLength-1][0] + "')"
 
 if layerType == "CNDDB":
     selectQuery += """
+                   AND (SNAME <> 'Gymnogyps californianus')
                    AND (PRESENCE = 'Presumed Extant') 
                    AND (ACCURACY = '1/10 mile' OR ACCURACY = '1/5 mile' 
                      OR ACCURACY = '80 meters' OR ACCURACY = 'specific area')
@@ -253,8 +254,8 @@ elif layerType == "Wildlife_Sites":
     selectQuery += " AND (ASSOC_OBS > 0) AND (SITE_NAME NOT LIKE '%Study%') "
 elif layerType == "Wildlife_Observations":
     selectQuery += " AND (TOTAL_DETECTED > 0 OR TOTAL_DETECTED IS NULL )"
-elif layerType == "Critical_Habitat_Lines":
-    selectQuery += " OR sciname = 'Oncorhynchus (=Salmo) mykiss' OR sciname = 'Catostomus microps'"
+# elif layerType == "Critical_Habitat_Lines":
+#     selectQuery += " OR sciname = 'Oncorhynchus (=Salmo) mykiss' OR sciname = 'Catostomus microps'"
 elif layerType == "TESP":
     for n in range(1, selectionListLength-1):
         selectQuery += " OR (ACCEPTED_SCIENTIFIC_NAME = " + "'" + selectionList[n][0] + "')"
@@ -510,7 +511,7 @@ try:
     arcpy.AddMessage("Repairing Geometry ......")
     arcpy.RepairGeometry_management(singlePartFeatureClass)
 
-    if layerType != "Critical_Habitat_Polygons" and layerType != "Critical_Habitat_Lines":
+    if layerType != "Critical_Habitat_Polygons":
         arcpy.AddMessage("Buffering features ....")
         bufferField = "BUFFM_FIRE"
         arcpy.Buffer_analysis(singlePartFeatureClass, bufferFC, bufferField)

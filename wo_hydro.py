@@ -30,7 +30,7 @@ staging_hydro_gdb = "2017_S_R05_FireRetardantEIS_CAALB83_AllHydroDatasets.gdb"
 
 outputHydro = outputWorkSpace + "Hydro2017" + "\\" + test_hydro_gdb
 
-wo_folder = in_workspace + "WO"
+wo_folder = in_workspace + "\\" + "WO"
 
 hydro_folder = wo_folder + "\\" + "Hydro_Submitted" + "\\"
 

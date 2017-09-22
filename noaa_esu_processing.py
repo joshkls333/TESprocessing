@@ -238,6 +238,10 @@ try:
         arcpy.RepairGeometry_management(singlePartFeatureClass)
         arcpy.AddMessage("Finished with Explode and Repair")
 
+        interimfc = fullNameFC + "_geocomplete"
+
+        arcpy.CopyFeatures_management(singlePartFeatureClass, interimfc)
+
     arcpy.AddMessage("Complete processing of all ESU datasets!")
     arcpy.AddMessage("Continue with pairwise_intersection.py to finalized processing of NOAA ESU data.")
 
