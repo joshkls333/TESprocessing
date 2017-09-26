@@ -54,7 +54,7 @@ outputWorkspace = outputDir + "\\" + outputHydroDir + "\\"
 hydroFeatureDataset = "\\" + "Hydrography" + "\\"
 
 # Need to rename when done with testing
-projectedGDB = "Hydro_Test_" + curYear + "_CAALB83_newproj.gdb"
+projectedGDB = "Hydro_" + curYear + "_CAALB83.gdb"
 
 outputProjGDB = outputWorkspace + projectedGDB
 
@@ -63,6 +63,8 @@ sr = arcpy.SpatialReference(3310)
 subRegionList = ["1503", "1604", "1605", "1606", "1710", "1712",
                  "1801", "1802", "1803", "1804", "1805", "1806",
                  "1807", "1808", "1809", "1810"]
+
+# subRegionList = ["1503", "1801"]
 
 nhdAreaFC = "NHDArea"
 nhdFlowlineFC = "NHDFlowline"
@@ -334,16 +336,34 @@ try:
         arcpy.AddMessage("Repairing Geometry ......")
         arcpy.RepairGeometry_management(intersectFeatureClass)
 
+        # make a copy of intersectFeatureClass for NOAA processing
+
+        arcpy.AddMessage("Selecting out Intermittents")
+
+        perennialFeatureClass = outputProjGDB + "\\" + item + "_perennial"
+
+        arcpy.MakeFeatureLayer_management(intersectFeatureClass, "lyr")
+
+        arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION", "(FCode <> 46000) AND (FCode <> 46003)")
+
+        result = arcpy.GetCount_management("lyr")
+        count = int(result.getOutput(0))
+        arcpy.AddMessage("Total Number of Records: " + str(count))
+
+        if count > 0:
+            arcpy.AddMessage("Copying selected records to Geodatabase without intermittent data.")
+            arcpy.CopyFeatures_management("lyr", perennialFeatureClass)
+
         arcpy.AddMessage("Dissolving Features")
 
-        dissolveFeatureClass = intersectFeatureClass + "_dissolved"
+        dissolveFeatureClass = perennialFeatureClass + "_dissolved"
 
         if sys.version_info[0] < 3:
-            arcpy.Dissolve_management(intersectFeatureClass, dissolveFeatureClass,
+            arcpy.Dissolve_management(perennialFeatureClass, dissolveFeatureClass,
                                             ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
                                              "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE", "BUFF_DIST"], "", "SINGLE_PART")
         else:
-            arcpy.PairwiseDissolve_analysis(intersectFeatureClass, dissolveFeatureClass,
+            arcpy.PairwiseDissolve_analysis(perennialFeatureClass, dissolveFeatureClass,
                                         ["UnitID", "GRANK_FIRE", "SNAME_FIRE", "CNAME_FIRE", "SOURCEFIRE",
                                          "BUFFT_FIRE", "BUFFM_FIRE", "CMNT_FIRE", "INST_FIRE", "BUFF_DIST"])
 
@@ -351,6 +371,10 @@ try:
         arcpy.RepairGeometry_management(dissolveFeatureClass)
         arcpy.AddMessage("Dissolve and Repair complete")
         arcpy.AddMessage(" ____________________________________________________________________")
+
+        interimfc = outputProjGDB + "\\" + item + "_geocomplete"
+
+        arcpy.CopyFeatures_management(dissolveFeatureClass, interimfc)
 
 except arcpy.ExecuteError:
     arcpy.AddError(arcpy.GetMessages(2))

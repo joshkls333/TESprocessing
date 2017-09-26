@@ -28,13 +28,13 @@ test_hydro_gdb = "Hydro_Test_2017_CAALB83_newproj.gdb"
 final_hydro_gdb = "2017_NHDfinal_CAALB83.gdb"
 staging_hydro_gdb = "2017_S_R05_FireRetardantEIS_CAALB83_AllHydroDatasets.gdb"
 
-outputHydro = outputWorkSpace + "Hydro2017" + "\\" + test_hydro_gdb
+outputHydro = outputWorkSpace + "Hydro2017" + "\\" + test_hydro_gdb + "\\"
 
 wo_folder = in_workspace + "\\" + "WO"
 
 hydro_folder = wo_folder + "\\" + "Hydro_Submitted" + "\\"
 
-final_wksp = hydro_folder + "\\" + final_hydro_gdb
+final_wksp = hydro_folder + "\\" + final_hydro_gdb + "\\"
 
 forestGDBList = ["S_R05_ANF_FireRetardantEIS.gdb",
                  "S_R05_BDF_FireRetardantEIS.gdb",
@@ -92,14 +92,15 @@ try:
     # May take out after testing is complete
     arcpy.AddMessage("exporting from test gdb to final gdb")
     arcpy.FeatureClassToGeodatabase_conversion(outputHydro +
-                                               "\\NHDFlowline_Merge_Buff_intersect_dissolved", final_wksp)
+                                               "NHDFlowline_Merge_Buff_intersect_dissolved", final_wksp)
     arcpy.FeatureClassToGeodatabase_conversion(outputHydro +
-                                               "\\NHDWaterbody_Area_Merge_Buff_intersect_dissolved", final_wksp)
+                                               "NHDWaterbody_Area_Merge_Buff_intersect_dissolved", final_wksp)
     arcpy.AddMessage("renaming files to final staging name")
-    arcpy.Rename_management(final_wksp + "\\NHDFlowline_Merge_Buff_intersect_dissolved",
-                            final_wksp + "\\NHD_Flowline")
-    arcpy.Rename_management(final_wksp + "\\NHDWaterbody_Area_Merge_Buff_intersect_dissolved",
-                            final_wksp + "\\NHD_Waterbody")
+
+    arcpy.Rename_management(final_wksp + "NHDFlowline_Merge_Buff_intersect_dissolved",
+                            final_wksp + "NHD_Flowline")
+    arcpy.Rename_management(final_wksp + "NHDWaterbody_Area_Merge_Buff_intersect_dissolved",
+                            final_wksp + "NHD_Waterbody")
 
     hydroList = ["NHD_Flowline", "NHD_Waterbody"]
 

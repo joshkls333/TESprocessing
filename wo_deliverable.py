@@ -23,17 +23,18 @@ arcpy.env.workspace = in_workspace
 
 arcpy.env.overwriteOutput = True
 
-final_r05_nodist_gdb = "2017_S_R05_FireRetardantEIS_CAALB83_NoDistribution_FWS.gdb"
-final_r05_dist_gdb   = "2017_S_R05_FireRetardantEIS_CAALB83_DistributableDatasets.gdb"
-
-final_no_wksp = in_workspace + "\\" + final_r05_nodist_gdb
-final_wksp    = in_workspace + "\\" + final_r05_dist_gdb
-
 # final_end_fc = final_wksp + "\\" + "FireRetardantEIS_Endangered"
 # final_thr_fc = final_wksp + "\\" + "FireRetardantEIS_Threatened"
 # final_sen_fc = final_wksp + "\\" + "FireRetardantEIS_Sensitive"
 
 wo_folder = in_workspace + "\\" + "WO"
+tes_folder = wo_folder + "\\" + "TES_Submitted" + "\\"
+
+final_r05_nodist_gdb = "2017_S_R05_FireRetardantEIS_CAALB83_NoDistribution_FWS.gdb"
+final_r05_dist_gdb   = "2017_S_R05_FireRetardantEIS_CAALB83_DistributableDatasets.gdb"
+
+final_no_wksp = wo_folder + "\\" + final_r05_nodist_gdb
+final_wksp    = wo_folder + "\\" + final_r05_dist_gdb
 
 forestGDBList = ["S_R05_ANF_FireRetardantEIS.gdb",
                  "S_R05_BDF_FireRetardantEIS.gdb",
@@ -93,7 +94,7 @@ try:
             unitIDnum = forestGDBDict.get(forest)
             arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION", "UnitID = '" + unitIDnum + "'")
 
-            final_wo_space = in_workspace + "\\WO\\" + forest + "\\" + "FireRetardantEIS_" + tes
+            final_wo_space = in_workspace + "\\" + "WO" + "\\" + forest + "\\" + "FireRetardantEIS_" + tes
 
             result = arcpy.GetCount_management("lyr")
             count = int(result.getOutput(0))

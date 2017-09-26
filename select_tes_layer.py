@@ -317,6 +317,8 @@ try:
         for row in cur:
             speciesrow = row.getValue(sciNameField)
             bufferAmount = 0
+            if layerType == "Critical_Habitat_Lines":
+                bufferAmount = 300
 
             row.SOURCEFIRE = sourceField
             row.SNAME_FIRE = speciesrow
