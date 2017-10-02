@@ -206,7 +206,7 @@ def unitid_dissolve(filename):
     cohosalmnum = 0
     ranamuscosanum = 0
 
-    csvfile = in_workspace + "\\csv_tables\CNDDB_SummaryTable.csv"
+    csvfile = in_workspace + "\\csv_tables\AllMerge_SummaryTable.csv"
 
     if layerType == "CNDDB":
         arcpy.AddMessage("csv File: " + csvfile)

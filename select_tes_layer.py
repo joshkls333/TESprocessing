@@ -75,7 +75,7 @@ for tes in tesvariablelist:
 
 layerType = sys.argv[4]
 
-# layerType = "CNDDB"
+# layerType = "TESP"
 
 outputDir = in_workspace + "\\" + "Output"
 if not os.path.exists(outputDir):
@@ -99,11 +99,10 @@ arcpy.AddMessage("Layer Type: " + layerType)
 
 #-------------------------------------------------------------------------------------------
 # the below is hardcoded values used for testing and debugging
-# inTable = in_workspace
+# inTable = in_workspace + "Input"
 
 inTable = sys.argv[2]
 
-# if inTable == "#":
 # if layerType == "TESP":
 #     inTable += "\\USFS_EDW\\EDW_TESP_r05_021617_Everything.gdb\\TESP\\TESP_OccurrenceAll"
 # elif layerType == "Wildlife_Sites":
@@ -166,7 +165,7 @@ if layerType == "CNDDB":
 
 csvFile = sys.argv[3]
 
-# csvFile = in_workspace + "\\csv_tables"
+# csvFile = in_workspace + "\\" + "csv_tables" + "\\" + "AllMerge_SummaryTable.csv"
 
 # if layerType == "TESP":
 #     csvFile += "\\TESP_SummaryTable.csv"
@@ -227,8 +226,6 @@ elif layerType == "CNDDB":
     commonNameField = "CNAME"
     sourceField = "CA CNDDB GOV version pulled " + pulldate
 
-    # Add blank strings for CMNT_FIRE and INST_FIRE
-
 # --------------------------------------------------------------------
 # Builds the selection query used in SelectLayerByAttribute_management
 # customized based on what the Scientific name field is and what other
@@ -239,7 +236,12 @@ selectQuery = "(" + sciNameField + " = "
 selectionListLength = len(selectionList)
 
 for n in range(1, selectionListLength-1):
-    selectQuery += "'" + selectionList[n][0] + "' OR " + sciNameField + " = "
+    if layerType == "Critical_Habitat_Lines" or layerType == "Critical_Habitat_Polygons":
+        if selectionList[n][6] == "CH":
+            selectQuery += "'" + selectionList[n][0] + "' OR " + sciNameField + " = "
+    else:
+        selectQuery += "'" + selectionList[n][0] + "' OR " + sciNameField + " = "
+    # selectQuery += "'" + selectionList[n][0] + "' OR " + sciNameField + " = "
 
 selectQuery += "'" + selectionList[selectionListLength-1][0] + "')"
 
@@ -256,6 +258,8 @@ elif layerType == "Wildlife_Observations":
     selectQuery += " AND (TOTAL_DETECTED > 0 OR TOTAL_DETECTED IS NULL )"
 # elif layerType == "Critical_Habitat_Lines":
 #     selectQuery += " OR sciname = 'Oncorhynchus (=Salmo) mykiss' OR sciname = 'Catostomus microps'"
+# elif layerType == "Critical_Habitat_Lines" or layerType == "Critical_Habitat_Polygons":
+#     selectQuery += " AND ( CH = " + "'" + selectionList[n][6] + "')"
 elif layerType == "TESP":
     for n in range(1, selectionListLength-1):
         selectQuery += " OR (ACCEPTED_SCIENTIFIC_NAME = " + "'" + selectionList[n][0] + "')"
@@ -333,10 +337,13 @@ try:
                     row.GRANK_FIRE = item[1]
                     if item[1] == "Threatened":
                         threatNum += 1
+                        break
                     elif item[1] == "Sensitive":
                         sensitiveNum += 1
+                        break
                     elif item[1] == "Endangered":
                         endangerNum += 1
+                        break
                     else:
                         otherNum += 1
 

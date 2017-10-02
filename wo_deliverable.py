@@ -29,12 +29,13 @@ arcpy.env.overwriteOutput = True
 
 wo_folder = in_workspace + "\\" + "WO"
 tes_folder = wo_folder + "\\" + "TES_Submitted" + "\\"
+fws_folder = wo_folder + "\\" + "FWS" + "\\"
 
 final_r05_nodist_gdb = "2017_S_R05_FireRetardantEIS_CAALB83_NoDistribution_FWS.gdb"
 final_r05_dist_gdb   = "2017_S_R05_FireRetardantEIS_CAALB83_DistributableDatasets.gdb"
 
-final_no_wksp = wo_folder + "\\" + final_r05_nodist_gdb
-final_wksp    = wo_folder + "\\" + final_r05_dist_gdb
+final_no_wksp = fws_folder + "\\" + final_r05_nodist_gdb
+final_wksp    = fws_folder + "\\" + final_r05_dist_gdb
 
 forestGDBList = ["S_R05_ANF_FireRetardantEIS.gdb",
                  "S_R05_BDF_FireRetardantEIS.gdb",
@@ -78,9 +79,14 @@ try:
     if not os.path.exists(wo_folder):
         arcpy.AddMessage("Creating directory for WO Data Deliverables ....")
         os.makedirs(wo_folder)
-        arcpy.AddMessage("Creating Geodatabase for Forest Data Deliverables ....")
-        for forest in forestGDBList:
-            arcpy.CreateFileGDB_management(wo_folder, forest)
+
+    if not os.path.exists(tes_folder):
+        arcpy.AddMessage("Creating directory TES_Submitted for WO Data Deliverables of TES forest GDBs....")
+        os.makedirs(tes_folder)
+
+    arcpy.AddMessage("Creating Geodatabase for Forest Data Deliverables ....")
+    for forest in forestGDBList:
+        arcpy.CreateFileGDB_management(tes_folder, forest)
 
     tesVariableList = ["Endangered", "Threatened", "Sensitive"]
 
@@ -94,7 +100,7 @@ try:
             unitIDnum = forestGDBDict.get(forest)
             arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION", "UnitID = '" + unitIDnum + "'")
 
-            final_wo_space = in_workspace + "\\" + "WO" + "\\" + forest + "\\" + "FireRetardantEIS_" + tes
+            final_wo_space = tes_folder + forest + "\\" + "FireRetardantEIS_" + tes
 
             result = arcpy.GetCount_management("lyr")
             count = int(result.getOutput(0))

@@ -31,39 +31,52 @@ arcpy.env.overwriteOutput = True
 
 tesvariablelist = ["Endangered", "Threatened", "Sensitive"]
 
-for tes in tesvariablelist:
-
-    newPath = in_workspace + "\\" + "2017_" + tes
-
-    # Geodatabases for final merge
-    merge_gdb = "2017_" + tes + "_Merged_CAALB83.gdb"
-    merge_gdb_wkspace = newPath + "\\" + merge_gdb + "\\"
-
-    if arcpy.Exists(merge_gdb_wkspace):
-        arcpy.AddMessage(tes + " GDB exists")
-    else:
-        arcpy.AddMessage("Creating Geodatabase for " + tes + " Data Deliverables containing merged data")
-        arcpy.CreateFileGDB_management(newPath, merge_gdb)
-
 final_r05_nodist_gdb = "2017_S_R05_FireRetardantEIS_CAALB83_NoDistribution_FWS.gdb"
 final_r05_dist_gdb   = "2017_S_R05_FireRetardantEIS_CAALB83_DistributableDatasets.gdb"
 
-if arcpy.Exists(final_r05_nodist_gdb):
-    arcpy.AddMessage("Final FWS GDB not for distribution exists")
-else:
-    arcpy.AddMessage("Creating Final Geodatabase with non-distributable Data Deliverables containing merged data")
-    arcpy.CreateFileGDB_management(in_workspace, final_r05_nodist_gdb)
+wo_folder = in_workspace + "\\" + "WO"
+tes_folder = wo_folder + "\\" + "TES_Submitted" + "\\"
+fws_folder = wo_folder + "\\" + "FWS" + "\\"
 
-if arcpy.Exists(final_r05_dist_gdb):
-    arcpy.AddMessage("Final GDB with distributable datasets exists")
-else:
-    arcpy.AddMessage("Creating Final Geodatabase with distrubatable Data Deliverables containing merged data")
-    arcpy.CreateFileGDB_management(in_workspace, final_r05_dist_gdb)
-
-final_no_wksp = in_workspace + "\\" + final_r05_nodist_gdb
-final_wksp    = in_workspace + "\\" + final_r05_dist_gdb
+final_no_wksp = fws_folder + "\\" + final_r05_nodist_gdb
+final_wksp    = fws_folder + "\\" + final_r05_dist_gdb
 
 try:
+    if not os.path.exists(wo_folder):
+        arcpy.AddMessage("Creating directory for WO Data Deliverables ....")
+        os.makedirs(wo_folder)
+
+    if not os.path.exists(fws_folder):
+        arcpy.AddMessage("Creating directory for FWS Data Deliverables ....")
+        os.makedirs(fws_folder)
+
+    if arcpy.Exists(final_r05_nodist_gdb):
+        arcpy.AddMessage("Final FWS GDB not for distribution exists")
+    else:
+        arcpy.AddMessage("Creating Final Geodatabase with non-distributable Data Deliverables containing merged data")
+        arcpy.CreateFileGDB_management(fws_folder, final_r05_nodist_gdb)
+
+    if arcpy.Exists(final_r05_dist_gdb):
+        arcpy.AddMessage("Final GDB with distributable datasets exists")
+    else:
+        arcpy.AddMessage("Creating Final Geodatabase with distrubatable Data Deliverables containing merged data")
+        arcpy.CreateFileGDB_management(fws_folder, final_r05_dist_gdb)
+
+    for tes in tesvariablelist:
+
+        newPath = in_workspace + "\\" + "2017_" + tes
+
+        # Geodatabases for final merge
+        merge_gdb = "2017_" + tes + "_Merged_CAALB83.gdb"
+        merge_gdb_wkspace = newPath + "\\" + merge_gdb + "\\"
+
+        if arcpy.Exists(merge_gdb_wkspace):
+            arcpy.AddMessage(tes + " GDB exists")
+        else:
+            arcpy.AddMessage("Creating Geodatabase for " + tes + " Data Deliverables containing merged data")
+            arcpy.CreateFileGDB_management(newPath, merge_gdb)
+
+    arcpy.AddMessage("Creating Geodatabase for Forest Data Deliverables ....")
 
     for tes in tesvariablelist:
         merge_gdb = "2017_" + tes + "_Merged_CAALB83.gdb"
@@ -130,6 +143,9 @@ try:
         arcpy.FeatureClassToGeodatabase_conversion(dissolveFeatureClass, final_wksp)
 
         arcpy.Rename_management(final_fc_old, final_fc)
+
+        # Delete old file to eliminate any filename confusion
+        arcpy.Delete_management(dissolveFeatureClass)
 
         arcpy.AddMessage("Export to final distributable GDB complete")
 
