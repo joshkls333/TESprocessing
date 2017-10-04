@@ -58,6 +58,7 @@ import sys
 import csv
 import os
 import datetime
+import subprocess
 
 # Set workspace or obtain from user input
 # in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
@@ -605,7 +606,11 @@ try:
 
     arcpy.AddMessage("interimfc: " + interimfc)
 
-    os.system("pairwise_intersect.py " + in_workspace + " " + interimfc + " " + layerType)
+    cmd = "pairwise_intersect.py " + " C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\" + " " + interimfc + " " + "TESP"
+
+    arcpy.AddMessage(cmd)
+
+    subprocess.call(cmd)
 
     arcpy.AddMessage(" What happened???")
 
