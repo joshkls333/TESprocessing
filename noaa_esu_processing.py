@@ -66,9 +66,9 @@ esuCommonNameDict = {"CKCAC": "California Coastal Chinook Salmon",
                      "COSNC": "Southern Oregon/Northern California Coasts Coho Salmon"}
 
 esuFilenameDict = {"CKCAC": "CKCAC_Chinook_CalifCoastal",
-                   "CKCVF": "CKCVF_Chinook__CentralValleyLateFallRun",
-                   "CKCVS": "CKCVS_Chinook__CentralValleySpringRun",
-                   "CKSAC": "CKSAC_Chinook__SacRiverWinterRun",
+                   "CKCVF": "CKCVF_Chinook_CentralValleyLateFallRun",
+                   "CKCVS": "CKCVS_Chinook_CentralValleySpringRun",
+                   "CKSAC": "CKSAC_Chinook_SacRiverWinterRun",
                    "STCCV": "STCCV_Steelhead_CalifCentralValley",
                    "STNCA": "STNCA_Steelhead_NorthCalif",
                    "STSCC": "STSCC_Steelhead_SouthCentralCalif",
@@ -86,12 +86,12 @@ esuStatusDict = {"CKCAC": "Threatened",
                  "COSNC": "Threatened"}
 
 # this workspace may change to output workspace from hydrology_processing.py
-noaaWorkspace = in_workspace + "\\NOAA_ESU\\"
-hydroClipWorkspace = in_workspace + "\\NHD2017\\2017_NHDfinal_CAALB83.gdb\\"
+noaaWorkspace = in_workspace + "\\" + "Downloads" + "\\" + "NOAA_ESU" + "\\"
+hydroClipWorkspace = in_workspace + "\\" + "Output" + "\\" + "Hydro" + curYear + "\\" + "Hydro_" + curYear + "_CAALB83.gdb" + "\\"
 
 # will need to rename these when done testing
-flowClipFeatClass = hydroClipWorkspace + "NHD_Flowline_2017"
-bodyClipFeatClass = hydroClipWorkspace + "NHDWaterBody_2017"
+flowClipFeatClass = hydroClipWorkspace + "NHDFlowline_Merge_Buff_intersect"
+bodyClipFeatClass = hydroClipWorkspace + "NHDWaterBody_Area_Merge_Buff_intersect"
 
 chinookFolder = noaaWorkspace + "Chinook" + "\\"
 cohoFolder = noaaWorkspace + "Coho" + "\\"
@@ -113,7 +113,7 @@ if not os.path.exists(outputDir + "\\" + layerType):
     os.makedirs(outputDir + "\\" + layerType)
 
 layerWorkSpace = outputDir + "\\" + layerType + "\\"
-projectedGDB = layerType + "_2017_CAALB83.gdb"
+projectedGDB = layerType + "_" + curYear + "_CAALB83.gdb"
 
 if arcpy.Exists(layerWorkSpace + "\\" + projectedGDB):
     newProjectWorkSpace = layerWorkSpace + "\\" + projectedGDB + "\\"

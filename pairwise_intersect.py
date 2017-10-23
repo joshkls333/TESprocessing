@@ -31,6 +31,7 @@
 # Import arcpy module
 import arcpy
 import sys
+import os
 import csv
 import datetime
 
@@ -45,63 +46,101 @@ now = datetime.datetime.today()
 curYear = str(now.year)
 arcpy.AddMessage("Year is " + curYear)
 
-local_gdb = in_workspace + "\\Local_Data\\" + curYear + "_Local_CAALB83.gdb\\"
-local_data = local_gdb + "\\Explode"
-
 # The following is used for testing locally. DELETE when done testing.
 # -------------------------------------------------------------------------------
 # outFeatClass = in_workspace + "\\" + layerType + "\\Critical_Habitat_Polygons_Test_2017_CAALB83_newproj.gdb\Critical_Habitat_Polygons_2017_Occurrence_found_newE_singlepart"
-
 # outFeatClass = in_workspace + "\\" + "Output" + "\\" + layerType + "\\TESP_Test_2017_CAALB83_newproj.gdb\\TESP_2017_original_buffered_single"
-
 # outFeatClass = in_workspace + "\\" + layerType + "\\Wildlife_Sites_Test_2017_CAALB83_newproj.gdb\\Wildlife_Sites_2017_Occurrence_found_newE_singlepart_buffer_spart"
-
 # outFeatClass = in_workspace + "\\CondorData_noFOIAnoRelease\\2017_Condor_CAALB83.gdb\\CondorHacking_2015"
-
 # outFeatClass = in_workspace + "\\Output\\CNDDB\\CNDDB_Test_2017_CAALB83_newproj.gdb\\CNDDB_2017_original_merge"
-
 # -------------------------------------------------------------------------------
 
 # layerType = "Condor_Hacking"
-
 # layerType = "Local"
-
 # layerType = "NOAA_ESU"
-
 # layerType = "CNDDB"
 
 # -------------------------------------------------------------------------------
 
-# outFeatClass = sys.argv[2]
+outFeatClass = sys.argv[2]
+
+layerType = sys.argv[3]
+
+# outFeatClassFile = arcpy.GetParameterAsText(2)
 #
-# layerType = sys.argv[3]
-
-outFeatClass = arcpy.GetParameterAsText(1)
-
-layerType = arcpy.GetParameterAsText(2)
+# layerType = arcpy.GetParameterAsText(2)
 
 sr = arcpy.SpatialReference(3310)
 
+intersectFeatureDataset = ""
+noaa_gdb = ""
+local_gdb = in_workspace + "\\" + "Input" + "\\" + "Local_Data" + "\\" + curYear + "_Local_CAALB83.gdb" + "\\"
+outputDir = in_workspace + "\\" + "Output"
+condor_output = outputDir + "\\" + "Condor" + "\\" + "Condor" + "_" + curYear + "_CAALB83.gdb" + "\\"
+local_output = outputDir + "\\" + "Local" + "\\" + "Local" + "_" + curYear + "_CAALB83.gdb" + "\\"
+
+# local_data = local_gdb + "\\Explode"
+
+# if layerType == "Local":
+#     arcpy.env.workspace = local_gdb
+#     if arcpy.Exists(local_gdb + "\\Intersect_New"):
+#         intersectFeatureDataset = local_gdb + "\\Intersect_New\\"
+#     else:
+#         arcpy.CreateFeatureDataset_management(local_gdb, "Intersect_New", 3310)
+#         intersectFeatureDataset = local_gdb + "\\Intersect_New\\"
+# elif layerType == "NOAA_ESU":
+
 if layerType == "Local":
-    arcpy.env.workspace = local_data
-    if arcpy.Exists(local_gdb + "\\Intersect_New"):
-        intersectFeatureDataset = local_gdb + "\\Intersect_New\\"
+    arcpy.env.workspace = local_gdb
+    if arcpy.Exists(local_output):
+        localOutputWorkSpace = local_output
     else:
-        arcpy.CreateFeatureDataset_management(local_gdb, "Intersect_New", 3310)
-        intersectFeatureDataset = local_gdb + "\\Intersect_New\\"
+        if not os.path.exists(outputDir):
+            arcpy.AddMessage("Creating directory for Output")
+            os.makedirs(outputDir)
+
+        if not os.path.exists(outputDir + "\\" + layerType):
+            arcpy.AddMessage("Creating output directory for " + layerType)
+            os.makedirs(outputDir + "\\" + layerType)
+
+        outputWorkSpace = outputDir + "\\" + layerType + "\\"
+        projectedGDB = layerType + "_" + curYear + "_CAALB83.gdb"
+
+        if arcpy.Exists(outputWorkSpace + "\\" + projectedGDB):
+            localOutputWorkSpace = outputWorkSpace + "\\" + projectedGDB + "\\"
+        else:
+            arcpy.CreateFileGDB_management(outputWorkSpace, projectedGDB)
+            localOutputWorkSpace = outputWorkSpace + "\\" + projectedGDB + "\\"
+elif layerType == "Condor_Nest" or layerType == "Condor_Hacking":
+    arcpy.env.workspace = in_workspace
+    if arcpy.Exists(condor_output):
+        condorOutputWorkSpace = condor_output
+    else:
+        outputDir = in_workspace + "\\" + "Output"
+        if not os.path.exists(outputDir):
+            arcpy.AddMessage("Creating directory for Output")
+            os.makedirs(outputDir)
+
+        if not os.path.exists(outputDir + "\\" + "Condor"):
+            arcpy.AddMessage("Creating output directory for Condor")
+            os.makedirs(outputDir + "\\" + "Condor")
+
+        outputWorkSpace = outputDir + "\\" + "Condor" + "\\"
+        projectedGDB = "Condor" + "_" + curYear + "_CAALB83.gdb"
+
+        if arcpy.Exists(outputWorkSpace + "\\" + projectedGDB):
+            localOutputWorkSpace = outputWorkSpace + "\\" + projectedGDB + "\\"
+        else:
+            arcpy.CreateFileGDB_management(outputWorkSpace, projectedGDB)
+            localOutputWorkSpace = outputWorkSpace + "\\" + projectedGDB + "\\"
 elif layerType == "NOAA_ESU":
-    noaaGdb = in_workspace + "\\NOAA_ESU\\" + curYear + "_NOAA_ESU_CAALB83.gdb"
-    arcpy.env.workspace = noaaGdb
-    outFeatClass = noaaGdb
+    noaa_gdb = in_workspace + "\\" + "Output" + "\\" + "NOAA_ESU" + "\\" + layerType + "_" + curYear + "_CAALB83.gdb"
+    arcpy.env.workspace = noaa_gdb
+    outFeatClass = noaa_gdb
 else:
     arcpy.env.workspace = in_workspace
 
 arcpy.env.overwriteOutput = True
-
-# nameOfFile = outFeatClass
-#
-# nameOfFile = nameOfFile.replace('C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\NOAA_ESU\\2017_NOAA_ESU_CAALB83.gdb\\','')
-# arcpy.AddMessage(nameOfFile)
 
 tesvariablelist = ["Endangered", "Threatened", "Sensitive"]
 
@@ -205,6 +244,7 @@ def unitid_dissolve(filename):
     ranaboyliinum = 0
     cohosalmnum = 0
     ranamuscosanum = 0
+    unprotforestnum = 0
 
     csvfile = in_workspace + "\\csv_tables\AllMerge_SummaryTable.csv"
 
@@ -228,21 +268,21 @@ def unitid_dissolve(filename):
     for row in cur:
         speciesname = row.getValue(fieldspecies)
         forestname = row.getValue(fieldforest)
-        row.UnitID = "0" + str(row.getValue(field))
+        row.UnitID = row.getValue(field)
         cur.updateRow(row)
         if layerType == "Wildlife_Observations":
             if speciesname == "Oncorhynchus kisutch" \
-                    and str(row.getValue(field)) == "516":
+                    and str(row.getValue(field)) == "0516":
                 cur.deleteRow(row)
                 cohosalmnum += 1
                 arcpy.AddMessage(
                     "Deleting row for Oncorhynchus kisutch because forest not protected, found in " + forestname)
         elif layerType == "Critical_Habitat_Polygons":
             if speciesname == "Rana muscosa" \
-                    and str(row.getValue(field)) != "501" \
-                    and str(row.getValue(field)) != "512" \
-                    and str(row.getValue(field)) != "502" \
-                    and str(row.getValue(field)) != "507":
+                    and str(row.getValue(field)) != "0501" \
+                    and str(row.getValue(field)) != "0512" \
+                    and str(row.getValue(field)) != "0502" \
+                    and str(row.getValue(field)) != "0507":
                 cur.deleteRow(row)
                 ranamuscosanum += 1
                 arcpy.AddMessage(
@@ -250,24 +290,24 @@ def unitid_dissolve(filename):
         # Used for filtering out records in CNDDB
         elif layerType == "CNDDB":
             # Used for deleting all the plant records in San Bernardino for CNDDB
-            if str(row.getValue(field)) == "512" \
+            if str(row.getValue(field)) == "0512" \
                     and row.getValue(fieldrank) != "Sensitive" \
                     and row.getValue(fieldother) == "PLANT":
                 cur.deleteRow(row)
                 plant0512num += 1
                 arcpy.AddMessage("deleted a row for 0512 Plant: " + speciesname)
             # Used for deleting all the Rana boylii not in the following three forests
-            elif str(row.getValue(field)) != "507" \
-                    and str(row.getValue(field)) != "513" \
-                    and str(row.getValue(field)) != "515" \
+            elif str(row.getValue(field)) != "0507" \
+                    and str(row.getValue(field)) != "0513" \
+                    and str(row.getValue(field)) != "0515" \
                     and speciesname == "Rana boylii":
                 cur.deleteRow(row)
                 ranaboyliinum += 1
                 arcpy.AddMessage("deleted a row for Rana boylii in forest: " + forestname)
-            # elif (str(row.getValue(field)) == "508" \
-            #         or str(row.getValue(field)) == "514" \
-            #         or str(row.getValue(field)) == "510" \
-            #         or str(row.getValue(field)) == "505") \
+            # elif (str(row.getValue(field)) == "0508" \
+            #         or str(row.getValue(field)) == "0514" \
+            #         or str(row.getValue(field)) == "0510" \
+            #         or str(row.getValue(field)) == "0505") \
             #         and speciesname == "Rana muscosa":
             #     cur.deleteRow(row)
             #     arcpy.AddMessage("deleted a row for Rana muscosa in forest: " + forestname)
@@ -281,17 +321,20 @@ def unitid_dissolve(filename):
                             break
                         elif item[3] != forestname.upper():
                             cur.deleteRow(row)
+                            unprotforestnum += 1
                             arcpy.AddMessage("deleted row for " + speciesname +
                                              " because found in " + forestname)
 
     del cur
 
-    # running export to gdb just for CNDDB dataset others were ran prior to this function
+    # running export to gdb just for datasets that required additional filtering others were ran prior to this function
     if layerType == "CNDDB":
         arcpy.AddMessage("Total records deleted because they were Plants from San Bernardino : "
                          + str(plant0512num))
         arcpy.AddMessage("Total records deleted because they were Rana boylii not in target forests : "
                          + str(ranaboyliinum))
+        arcpy.AddMessage("Total records deleted because they were species found in unprotected forests : "
+                         + str(unprotforestnum))
         copy_to_gdb("Interim", filename)
     elif layerType == "Wildlife_Observations":
         arcpy.AddMessage("Total records deleted because they were Oncorhynchus kisutch in STF : "
@@ -336,7 +379,7 @@ try:
         for fc in fcList:
             arcpy.AddMessage("  fc: " + fc)
             if layerType == "NOAA_ESU":
-                if not fc.endswith('_AllHydro'):
+                if not fc.endswith('_geocomplete'):
                     continue
             arcpy.AddMessage("--------------------------------------------------")
             arcpy.AddMessage("Intersecting " + fc)
@@ -352,9 +395,9 @@ try:
             arcpy.AddMessage("Please be patient while this runs .....")
 
             if layerType == "Local":
-                intersectFeatureClass = intersectFeatureDataset + "\\" + intersectFeature
+                intersectFeatureClass = localOutputWorkSpace + "\\" + intersectFeature
             else:
-                intersectFeatureClass = noaaGdb + "\\" + intersectFeature
+                intersectFeatureClass = noaa_gdb + "\\" + intersectFeature
 
             if layerType == "Local":
                 arcpy.Intersect_analysis([outFeatClass, usfsOwnershipFeatureClass], intersectFeatureClass)
@@ -393,21 +436,18 @@ try:
 
         arcpy.AddMessage("Completed Intersection")
 
-        # These layers are modified first prior to
+        # These layers are modified first prior to exporting the geodatabases
         if layerType != "CNDDB" and layerType != "Wildlife_Observations" and layerType != "Critical_Habitat_Polygons":
-            # # may need to fix the NOAA layer - may remove this and just use the above
-            # if layerType == "NOAA_ESU":
-            #     copy_to_gdb("Interim", nameOfFile)
-            # else:
             copy_to_gdb("Interim", intersectFeatureClass)
 
         dissolveFC = unitid_dissolve(intersectFeatureClass)
 
-        # # may need to fix the NOAA layer - may remove this and just use the above
-        # if layerType == "NOAA_ESU":
-        #     copy_to_gdb("Final", dissolveFC)
-        # else:
         copy_to_gdb("Final", dissolveFC)
+
+        if layerType == "Condor_Nest" or layerType == "Condor_Hacking":
+            arcpy.FeatureClassToGeodatabase_conversion([intersectFeatureClass, dissolveFC], condor_output)
+            arcpy.Delete_management(intersectFeatureClass)
+            arcpy.Delete_management(dissolveFC)
 
     arcpy.AddMessage("Completed Script successfully!!")
 

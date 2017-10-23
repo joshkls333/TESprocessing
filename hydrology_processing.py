@@ -43,7 +43,9 @@ curMonth = str(now.month)
 curYear = str(now.year)
 arcpy.AddMessage("Year is " + curYear)
 
-hydroWorkspace = in_workspace + "\\" + "NHD" + curYear + "\\" + "Subregions" + "\\"
+# hydroWorkspace = in_workspace + "\\" + "NHD" + curYear + "\\" + "Subregions" + "\\"
+
+hydroWorkspace = in_workspace + "\\" + "Downloads" + "\\" + "Hydro" + "\\"
 
 outputDir = in_workspace + "\\" + "Output"
 
@@ -303,8 +305,8 @@ try:
         arcpy.AddMessage("Repairing Geometry of Buffered " + item)
         arcpy.RepairGeometry_management(bufferOutput)
 
-        usfsOwnershipFeatureClass = in_workspace + \
-                                    "\\USFS_Ownership_LSRS\\2017_USFS_Ownership_CAALB83.gdb\\USFS_OwnershipLSRS_2017"
+        # usfsOwnershipFeatureClass = in_workspace + \
+        #                             "\\USFS_Ownership_LSRS\\2017_USFS_Ownership_CAALB83.gdb\\USFS_OwnershipLSRS_2017"
 
         intersectFeatureClass = bufferOutput + "_intersect"
 
@@ -328,7 +330,7 @@ try:
 
         # populating UnitID field with UnitID_FS field
         for row in cur:
-            row.UnitID = "0" + str(row.getValue(field))
+            row.UnitID = str(row.getValue(field))
             cur.updateRow(row)
 
         del cur

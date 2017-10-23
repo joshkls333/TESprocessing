@@ -541,16 +541,23 @@ try:
     else:
         arcpy.CopyFeatures_management(singlePartFeatureClass, interimfc)
 
+    localdataWorkSpace = in_workspace + "\\" + "Input" + "\\" + "Local_Data" + "\\"
+
     if layerType == "CNDDB":
 
         arcpy.AddMessage("Moving Shasta Crayfish files into Geodatabase")
         # May need to change where this is being pulled
-        tempWorkSpace = in_workspace + "\\" + "CNDDB" + "\\" + curYear + "_CNDDB_CAALB83.gdb\\"
-        crayFlowLines = tempWorkSpace + "CNDDB_Endangered_ShastaCrayfish_NHDFlowlines"
-        crayWaterBodies = tempWorkSpace + "CNDDB_Endangered_ShastaCrayfish_NHDWaterbodies"
+
+        crayfishWorkSpace = localdataWorkSpace + curYear + "_ShastaCrayfish_CAALB83.gdb" + "\\"
+        crayFlowLines = crayfishWorkSpace + "CNDDB_Endangered_ShastaCrayfish_NHDFlowlines"
+        crayWaterBodies = crayfishWorkSpace + "CNDDB_Endangered_ShastaCrayfish_NHDWaterbodies"
         arcpy.FeatureClassToGeodatabase_conversion([crayFlowLines, crayWaterBodies], projWorkspace)
 
         arcpy.AddMessage("Merging the CNDDDB feature class with the Shasta Crayfish files")
+        arcpy.AddMessage("Using the following feature classes:")
+        arcpy.AddMessage("Shasta Crayfish flowlines:  " + crayFlowLines)
+        arcpy.AddMessage("Shasta Crayfish waterbodies:  " + crayWaterBodies)
+
         arcpy.Merge_management([crayFlowLines, crayWaterBodies, singlePartBufferedFC], fileMerge)
         arcpy.AddMessage("Finished with merge")
 
@@ -577,14 +584,16 @@ try:
     elif layerType == "Wildlife_Sites":
         arcpy.AddMessage("Moving two MYLF study area files into Geodatabase")
         # May need to fix where this data is being pulled
-        tmpWorkSpace = in_workspace + "\\" + "USFS_EDW" + "\\" + curYear + "_EDW_CAALB83.gdb\\"
-        studyFlowLines = tmpWorkSpace + \
-                         "EDW_WildlifeSites_FRASelectionSet_CAALB_NHDFlowlines_MYLF_E_INFStudyAreas_buffered"
-        studyWaterBodies = tmpWorkSpace + \
-                           "EDW_WildlifeSites_FRASelectionSet_CAALB_NHDWaterbodys_MYLF_E_INFStudyAreas_buffered"
+        mylfWorkSpace = localdataWorkSpace + curYear + "_MYLF_CAALB83.gdb" + "\\"
+        studyFlowLines = mylfWorkSpace + "EDW_WildlifeSites_NHDFlowlines_MYLF_StudyAreas_buffered"
+        studyWaterBodies = mylfWorkSpace + "EDW_WildlifeSites_NHDWaterbodys_MYLF_StudyAreas_buffered"
         arcpy.FeatureClassToGeodatabase_conversion([studyFlowLines, studyWaterBodies], projWorkspace)
 
         arcpy.AddMessage("Merging the Wildlife Sites feature class with the two MYLF study area")
+        arcpy.AddMessage("Using the following feature classes:")
+        arcpy.AddMessage("MYLF flowlines:  " + studyFlowLines)
+        arcpy.AddMessage("MYLF water bodies:  " + studyWaterBodies)
+
         arcpy.Merge_management([studyFlowLines, studyWaterBodies, singlePartBufferedFC], fileMerge)
         arcpy.AddMessage("Finished with merge")
 

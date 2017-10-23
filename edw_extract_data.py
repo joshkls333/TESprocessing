@@ -21,13 +21,17 @@ import arcpy
 import sys
 import os
 import datetime
-import urllib
-import urllib2
-import zipfile
 
 # Set workspace or obtain from user input
 # in_workspace = "T:\FS\NFS\R05\Program\\6800InformationMgmt\GIS\Workspace\jklaus\\Python\\"
 in_workspace = sys.argv[1]
+
+# using the now variable to assign year everytime there is a hardcoded 2017
+now = datetime.datetime.today()
+curMonth = str(now.month)
+curYear = str(now.year)
+arcpy.AddMessage("Year is " + curYear)
+
 
 arcpy.env.workspace = in_workspace
 arcpy.env.overwriteOutput = True
@@ -46,7 +50,8 @@ newPath = in_workspace + "\\" + "EDW_Extract"
 edwGDB = "edw_extract.gdb"
 selectQuery = "FS_UNIT_ID LIKE '05%'"
 
-landSelectQuery = "(REGION = '05') OR (FORESTNAME = 'Lake Tahoe Basin Management Unit')"
+landSelectQuery = "((REGION = '05') OR (FORESTNAME = 'Lake Tahoe Basin Management Unit')) " \
+                  "AND (OWNERCLASSIFICATION = 'USDA FOREST SERVICE')"
 
 newTESPFeatureClass = "TESP_Extract"
 r5TESPFeatureClass = "TESP_region5"
@@ -70,14 +75,14 @@ forestGDBDict = {"Angeles National Forest": "0501",
                  "Los Padres National Forest": "0507",
                  "Modoc National Forest": "0509",
                  "Mendocino National Forest": "0508",
-                 "Pluman National Forest": "0511",
+                 "Plumas National Forest": "0511",
                  "Shasta-Trinity National Forest": "0514",
                  "Sierra National Forest": "0515",
                  "Sequoia National Forest": "0513",
                  "Six Rivers National Forest": "0510",
                  "Stanislaus National Forest": "0516",
                  "Lake Tahoe Basin Management Unit": "0519",
-                 "Tahoe National Forest": "0516"}
+                 "Tahoe National Forest": "0517"}
 
 
 if not os.path.exists(newPath):
@@ -140,6 +145,19 @@ try:
 
             del cur
 
+            projectedGDB = curYear + "_USFS_Ownership_CAALB83.gdb"
+            arcpy.CreateFileGDB_management(newPath, projectedGDB)
+            projectedWorkspace = newPath + "\\" + projectedGDB + "\\" + "USFS_OwnershipLSRS_" + curYear
+
+            spatial_ref = arcpy.Describe(r5WorkSpace).spatialReference
+
+            arcpy.AddMessage("Current Spatial Reference is : " + spatial_ref.name)
+
+            sr = arcpy.SpatialReference(3310)
+
+            if spatial_ref.name != "NAD_1983_California_Teale_Albers":
+                arcpy.AddMessage("Reprojecting layer to NAD 1983 California Teale Albers ....")
+                arcpy.Project_management(r5WorkSpace, projectedWorkspace, sr)
 
 except arcpy.ExecuteError:
     arcpy.AddError(arcpy.GetMessages(2))

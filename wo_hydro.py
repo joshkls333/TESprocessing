@@ -24,8 +24,8 @@ arcpy.env.overwriteOutput = True
 
 outputWorkSpace = in_workspace + "\\" + "Output" + "\\"
 
-# test_hydro_gdb = "Hydro_2017_CAALB83.gdb"
-test_hydro_gdb = "Hydro_Test_2017_CAALB83_newproj.gdb"
+test_hydro_gdb = "Hydro_2017_CAALB83.gdb"
+# test_hydro_gdb = "Hydro_Test_2017_CAALB83_newproj.gdb"
 
 final_hydro_gdb = "2017_NHDfinal_CAALB83.gdb"
 staging_hydro_gdb = "2017_S_R05_FireRetardantEIS_CAALB83_AllHydroDatasets.gdb"
@@ -49,7 +49,7 @@ forestGDBList = ["S_R05_ANF_FireRetardantEIS.gdb",
                  "S_R05_MDF_FireRetardantEIS.gdb",
                  "S_R05_MNF_FireRetardantEIS.gdb",
                  "S_R05_PNF_FireRetardantEIS.gdb",
-                 "S_R05_SHF_FireRetardantEIS.gdb",
+                 "S_R05_SHU_FireRetardantEIS.gdb",
                  "S_R05_SNF_FireRetardantEIS.gdb",
                  "S_R05_SQF_FireRetardantEIS.gdb",
                  "S_R05_SRF_FireRetardantEIS.gdb",
@@ -68,7 +68,7 @@ forestGDBDict = {"S_R05_ANF_FireRetardantEIS.gdb": "0501",
                  "S_R05_MDF_FireRetardantEIS.gdb": "0509",
                  "S_R05_MNF_FireRetardantEIS.gdb": "0508",
                  "S_R05_PNF_FireRetardantEIS.gdb": "0511",
-                 "S_R05_SHF_FireRetardantEIS.gdb": "0514",
+                 "S_R05_SHU_FireRetardantEIS.gdb": "0514",
                  "S_R05_SNF_FireRetardantEIS.gdb": "0515",
                  "S_R05_SQF_FireRetardantEIS.gdb": "0513",
                  "S_R05_SRF_FireRetardantEIS.gdb": "0510",
