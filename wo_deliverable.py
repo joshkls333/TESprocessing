@@ -93,6 +93,7 @@ try:
     for forest in forestGDBList:
         arcpy.AddMessage("-----------------------------------------------------------")
         arcpy.AddMessage("Populating " + forest)
+        forestFCList = []
         for tes in tesVariableList:
             final_fc = final_wksp + "\\" + "FireRetardantEIS_" + tes
             arcpy.MakeFeatureLayer_management(final_fc, "lyr")
@@ -112,6 +113,20 @@ try:
             if count > 0:
                 arcpy.AddMessage("Copying selected records to " + forest + "  Geodatabase ......")
                 arcpy.CopyFeatures_management("lyr", final_wo_space)
+                forestFCList.append(final_wo_space)
+
+        mergeFeatureClass = tes_folder + forest + "\\" + "FireRetardantEIS_merge"
+        arcpy.AddMessage("Merging Feature Classes")
+        arcpy.Merge_management(forestFCList, mergeFeatureClass)
+
+        arcpy.AddMessage("Dissolving Features")
+
+        dissolveFeatureClass = tes_folder + forest + "\\" + "FireRetardantEIS_Dissolve"
+
+        if sys.version_info[0] < 3:
+            arcpy.Dissolve_management(mergeFeatureClass, dissolveFeatureClass, "UnitID")
+        else:
+            arcpy.PairwiseDissolve_analysis(mergeFeatureClass, dissolveFeatureClass, "UnitID")
 
 except arcpy.ExecuteError:
     arcpy.AddError(arcpy.GetMessages(2))

@@ -20,6 +20,7 @@ import os
 import datetime
 import urllib
 import zipfile
+import shutil
 
 # Set workspace or obtain from user input
 # in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
@@ -64,6 +65,8 @@ try:
         arcpy.AddMessage("Downloading " + filename + " to " + hydroDownloadPath)
 
         urllib.urlretrieve(url, downloadFile)
+#         with urllib.request.urlopen(url) as response, open(filename, 'wb') as output_file:
+#             shutil.copyfileobj(response, output_file)
 
         arcpy.AddMessage("Unzipping " + filename)
         zip_ref = zipfile.ZipFile(downloadFile, 'r')
@@ -86,6 +89,8 @@ try:
         arcpy.AddMessage("Downloading " + filename + " to " + noaaDownloadPath)
 
         urllib.urlretrieve(url, downloadFile)
+#         with urllib.request.urlopen(url) as response, open(downloadFile, 'wb') as output_file:
+#             shutil.copyfileobj(response, output_file)
 
         arcpy.AddMessage("Unzipping " + filename)
         zip_ref = zipfile.ZipFile(downloadFile, 'r')
@@ -105,6 +110,8 @@ try:
     arcpy.AddMessage("Downloading " + filename + " to " + chabDownloadPath)
 
     urllib.urlretrieve(url, downloadFile)
+#     with urllib.request.urlopen(url) as response, open(downloadFile, 'wb') as output_file:
+#         shutil.copyfileobj(response, output_file)
 
     arcpy.AddMessage("Unzipping " + filename)
     zip_ref = zipfile.ZipFile(downloadFile, 'r')

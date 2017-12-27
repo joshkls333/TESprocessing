@@ -170,7 +170,7 @@ try:
                     selectQuery = "(  FType = 436 OR FType = 466 OR FType = 493 " \
                                   "OR FCode = 39004 OR FCode = 39009 OR FCode = 39010 OR FCode = 39011)"
                 elif waterFeature == nhdAreaFC:
-                    selectQuery = "( FCode = 46003 OR FCode = 46006 )"
+                    selectQuery = "( FCode = 46000 OR FCode = 46003 OR FCode = 46006 )"
 
                 arcpy.AddMessage("Selecting features based on following Select Query: " + selectQuery)
                 arcpy.MakeFeatureLayer_management(inSelectFC, "lyr" )
