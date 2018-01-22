@@ -18,10 +18,17 @@
 import arcpy
 import os
 import sys
+import datetime
 
 in_workspace = sys.argv[1]
 
-# in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant"
+# in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
+
+# using the now variable to assign year every time there is a hardcoded 2017
+now = datetime.datetime.today()
+curMonth = str(now.month)
+curYear = str(now.year)
+arcpy.AddMessage("Year is " + curYear)
 
 sr = arcpy.SpatialReference(3310)
 
@@ -31,8 +38,8 @@ arcpy.env.overwriteOutput = True
 
 tesvariablelist = ["Endangered", "Threatened", "Sensitive"]
 
-final_r05_nodist_gdb = "2017_S_R05_FireRetardantEIS_CAALB83_NoDistribution_FWS.gdb"
-final_r05_dist_gdb   = "2017_S_R05_FireRetardantEIS_CAALB83_DistributableDatasets.gdb"
+final_r05_nodist_gdb = curYear + "_S_R05_FireRetardantEIS_CAALB83_NoDistribution_FWS.gdb"
+final_r05_dist_gdb   = curYear + "_S_R05_FireRetardantEIS_CAALB83_DistributableDatasets.gdb"
 
 wo_folder = in_workspace + "\\" + "WO"
 tes_folder = wo_folder + "\\" + "TES_Submitted" + "\\"
@@ -64,10 +71,10 @@ try:
 
     for tes in tesvariablelist:
 
-        newPath = in_workspace + "\\" + "2017_" + tes
+        newPath = in_workspace + "\\" + curYear + "_" + tes
 
         # Geodatabases for final merge
-        merge_gdb = "2017_" + tes + "_Merged_CAALB83.gdb"
+        merge_gdb = curYear + "_" + tes + "_Merged_CAALB83.gdb"
         merge_gdb_wkspace = newPath + "\\" + merge_gdb + "\\"
 
         if arcpy.Exists(merge_gdb_wkspace):
@@ -79,9 +86,9 @@ try:
     arcpy.AddMessage("Creating Geodatabase for Forest Data Deliverables ....")
 
     for tes in tesvariablelist:
-        merge_gdb = "2017_" + tes + "_Merged_CAALB83.gdb"
-        newpath = in_workspace + "\\" + "2017_" + tes
-        tes_workspace = newpath + "\\" + "2017_" + tes + "_IdentInter_CAALB83.gdb"
+        merge_gdb = curYear + "_" + tes + "_Merged_CAALB83.gdb"
+        newpath = in_workspace + "\\" + curYear + "_" + tes
+        tes_workspace = newpath + "\\" + curYear + "_" + tes + "_IdentInter_CAALB83.gdb"
         arcpy.env.workspace = tes_workspace
 
         if arcpy.Exists(tes_workspace):

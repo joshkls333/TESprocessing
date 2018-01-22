@@ -14,10 +14,17 @@
 import arcpy
 import os
 import sys
+import datetime
 
 in_workspace = sys.argv[1]
 
 # in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
+
+# using the now variable to assign year every time there is a hardcoded 2017
+now = datetime.datetime.today()
+curMonth = str(now.month)
+curYear = str(now.year)
+arcpy.AddMessage("Year is " + curYear)
 
 arcpy.env.workspace = in_workspace
 
@@ -31,8 +38,8 @@ wo_folder = in_workspace + "\\" + "WO"
 tes_folder = wo_folder + "\\" + "TES_Submitted" + "\\"
 fws_folder = wo_folder + "\\" + "FWS" + "\\"
 
-final_r05_nodist_gdb = "2017_S_R05_FireRetardantEIS_CAALB83_NoDistribution_FWS.gdb"
-final_r05_dist_gdb   = "2017_S_R05_FireRetardantEIS_CAALB83_DistributableDatasets.gdb"
+final_r05_nodist_gdb = curYear + "_S_R05_FireRetardantEIS_CAALB83_NoDistribution_FWS.gdb"
+final_r05_dist_gdb   = curYear + "_S_R05_FireRetardantEIS_CAALB83_DistributableDatasets.gdb"
 
 final_no_wksp = fws_folder + "\\" + final_r05_nodist_gdb
 final_wksp    = fws_folder + "\\" + final_r05_dist_gdb

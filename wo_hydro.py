@@ -13,10 +13,17 @@
 import arcpy
 import os
 import sys
+import datetime
 
 in_workspace = sys.argv[1]
 
 # in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
+
+# using the now variable to assign year every time there is a hardcoded 2017
+now = datetime.datetime.today()
+curMonth = str(now.month)
+curYear = str(now.year)
+arcpy.AddMessage("Year is " + curYear)
 
 arcpy.env.workspace = in_workspace
 
@@ -24,13 +31,13 @@ arcpy.env.overwriteOutput = True
 
 outputWorkSpace = in_workspace + "\\" + "Output" + "\\"
 
-test_hydro_gdb = "Hydro_2017_CAALB83.gdb"
+test_hydro_gdb = "Hydro_" + curYear + "_CAALB83.gdb"
 # test_hydro_gdb = "Hydro_Test_2017_CAALB83_newproj.gdb"
 
-final_hydro_gdb = "2017_NHDfinal_CAALB83.gdb"
-staging_hydro_gdb = "2017_S_R05_FireRetardantEIS_CAALB83_AllHydroDatasets.gdb"
+final_hydro_gdb = curYear + "_NHDfinal_CAALB83.gdb"
+staging_hydro_gdb = curYear + "_S_R05_FireRetardantEIS_CAALB83_AllHydroDatasets.gdb"
 
-outputHydro = outputWorkSpace + "Hydro2017" + "\\" + test_hydro_gdb + "\\"
+outputHydro = outputWorkSpace + "Hydro" + curYear + "\\" + test_hydro_gdb + "\\"
 
 wo_folder = in_workspace + "\\" + "WO"
 

@@ -18,7 +18,7 @@
 #              CopyFeatures_management, GetCount_management, AddField_management, UpdateCursor, Merge_management,
 #              Buffer_analysis, RepairGeometery_management, PairwiseIntersect_analysis, PairwiseDissolve_analyis
 #
-# Runtime Estimates: Total time = 6 hr 21 min 7 sec
+# Runtime Estimates: Total time = 4 hr 21 min 7 sec
 #                    Export and projection of original data = 55 min
 #
 # Created by: Josh Klaus 08/24/2017 jklaus@fs.fed.us
@@ -31,7 +31,7 @@ import os
 import datetime
 
 # Set workspace or obtain from user input
-# in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fire_retardant\\"
+# in_workspace = "C:\\Users\\jklaus\\Documents\\Python_Testing\\fra_new\\"
 in_workspace = sys.argv[1]
 
 arcpy.env.workspace = in_workspace
@@ -63,8 +63,8 @@ outputProjGDB = outputWorkspace + projectedGDB
 sr = arcpy.SpatialReference(3310)
 
 subRegionList = ["1503", "1604", "1605", "1606", "1710", "1712",
-                 "1801", "1802", "1803", "1804", "1805", "1806",
-                 "1807", "1808", "1809", "1810"]
+                "1801", "1802", "1803", "1804", "1805", "1806",
+                "1807", "1808", "1809", "1810"]
 
 # subRegionList = ["1503", "1801"]
 
@@ -346,7 +346,12 @@ try:
 
         arcpy.MakeFeatureLayer_management(intersectFeatureClass, "lyr")
 
-        arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION", "(FCode <> 46000) AND (FCode <> 46003)")
+        if item == "NHDFlowline_Merge":
+            arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION", "(FCode <> 46000) AND (FCode <> 46003)")
+            arcpy.AddMessage("Selecting out 46000 and 46003 for Flowlines")
+        else:
+            arcpy.SelectLayerByAttribute_management("lyr", "NEW_SELECTION", "(FCode <> 46003)")
+            arcpy.AddMessage("Selecting out 46003 for Waterbodies and Areas")
 
         result = arcpy.GetCount_management("lyr")
         count = int(result.getOutput(0))
