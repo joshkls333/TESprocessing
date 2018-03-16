@@ -124,6 +124,7 @@ try:
 
         mergeFeatureClass = tes_folder + forest + "\\" + "FireRetardantEIS_merge"
         arcpy.AddMessage("Merging Feature Classes")
+        arcpy.AddMessage("If there are no files to merge this will error until a workaround is produced!")
         arcpy.Merge_management(forestFCList, mergeFeatureClass)
 
         arcpy.AddMessage("Dissolving Features")

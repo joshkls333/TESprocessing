@@ -119,7 +119,7 @@ try:
     arcpy.AddMessage("Ouput Workspace: " + newHydroWorkSpace)
 
     for region in subRegionList:
-        hydroGDB = "NHD_H_" + region + "_GDB.gdb"
+        hydroGDB = "NHD_H_" + region + "_HU4_GDB.gdb"
 
         if arcpy.Exists(hydroWorkspace + hydroGDB):
             arcpy.AddMessage("______________________________________")

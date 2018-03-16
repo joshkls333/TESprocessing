@@ -54,7 +54,7 @@ try:
 
     for region in subRegionList:
 
-        filename = "NHD_H_" + region + "_GDB.zip"
+        filename = "NHD_H_" + region + "_HU4_GDB.zip"
 
         hydroDownloadPath = downloadPath + "\\" + "Hydro"
 

@@ -40,13 +40,12 @@ curMonth = now.strftime("%B")
 arcpy.AddMessage("Month is " + curMonth)
 arcpy.AddMessage("Year is " + curYear)
 
-esuSpeciesList = ["CKCAC", "CKCVF", "CKCVS", "CKSAC",
-                  "STCCV", "STNCA", "STSCC", "STSCA", "COSNC"]
+esuSpeciesList = ["CKCAC", "CKCVS", "CKSAC", "STCCV",
+                  "STNCA", "STSCC", "STSCA", "COSNC"]
 
 # esuSpeciesList = ["COSNC"]
 
 esuSpeciesNameDict = {"CKCAC": "Oncorhynchus tshawytscha",
-                      "CKCVF": "Oncorhynchus tshawytscha",
                       "CKCVS": "Oncorhynchus tshawytscha",
                       "CKSAC": "Oncorhynchus tshawytscha",
                       "STCCV": "Oncorhynchus mykiss",
@@ -56,7 +55,6 @@ esuSpeciesNameDict = {"CKCAC": "Oncorhynchus tshawytscha",
                       "COSNC": "Oncorhynchus kisutch"}
 
 esuCommonNameDict = {"CKCAC": "California Coastal Chinook Salmon",
-                     "CKCVF": "Central Valley Fall and Late Fall-run Chinook Salmon",
                      "CKCVS": "Central Valley Spring-run Chinook Salmon",
                      "CKSAC": "Sacramento River Winter-run Chinook Salmon",
                      "STCCV": "California Central Valley Steelhead",
@@ -66,7 +64,6 @@ esuCommonNameDict = {"CKCAC": "California Coastal Chinook Salmon",
                      "COSNC": "Southern Oregon/Northern California Coasts Coho Salmon"}
 
 esuFilenameDict = {"CKCAC": "CKCAC_Chinook_CalifCoastal",
-                   "CKCVF": "CKCVF_Chinook_CentralValleyLateFallRun",
                    "CKCVS": "CKCVS_Chinook_CentralValleySpringRun",
                    "CKSAC": "CKSAC_Chinook_SacRiverWinterRun",
                    "STCCV": "STCCV_Steelhead_CalifCentralValley",
@@ -76,7 +73,6 @@ esuFilenameDict = {"CKCAC": "CKCAC_Chinook_CalifCoastal",
                    "COSNC": "COSNC_Coho_SouthOregNorthCalifCoasts"}
 
 esuStatusDict = {"CKCAC": "Threatened",
-                 "CKCVF": "Sensitive",
                  "CKCVS": "Threatened",
                  "CKSAC": "Endangered",
                  "STCCV": "Threatened",
